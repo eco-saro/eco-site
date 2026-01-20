@@ -6,12 +6,20 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { Calendar, Package, Settings as SettingsIcon, LogOut, User, MapPin, CreditCard, HelpCircle, Star, ChevronRight, Check } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/components/ui/use-toast';
 import { Progress } from '@/components/ui/progress';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Separator } from '@/components/ui/separator';
 
 const BOOKINGS = [
   { id: 'BK-789', service: 'AC Repair', date: new Date(2023, 7, 5), status: 'Confirmed', duration: '2 hours' },
@@ -39,13 +47,22 @@ type Order = {
   createdAt: string
   totalAmount: number
   status: string
-  items: {
+  products: {
     productId: string
     name: string
     price: number
     quantity: number
     image?: string
   }[]
+  shippingAddress?: {
+    name: string
+    phone: string
+    street: string
+    city: string
+    state: string
+    pincode: string
+    country: string
+  }
 }
 export default function ProfilePage() {
 
@@ -55,6 +72,8 @@ export default function ProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   // Form states
   const [orders, setOrders] = useState<Order[]>([])
@@ -369,7 +388,7 @@ export default function ProfilePage() {
                           <div>
                             <p className="font-medium">Order #{order._id.slice(-6).toUpperCase()}</p>
                             <p className="text-sm text-gray-500 mt-1">
-                              {format(new Date(order.createdAt), 'dd MMM yyyy')} • {order.items.length} item{order.items.length > 1 ? 's' : ''}
+                              {format(new Date(order.createdAt), 'dd MMM yyyy')} • {order.products?.length || 0} item{(order.products?.length || 0) > 1 ? 's' : ''}
                             </p>
                           </div>
                           <div className="flex items-center mt-2 md:mt-0">
@@ -381,7 +400,14 @@ export default function ProfilePage() {
                                 {order.status}
                               </p>
                             </div>
-                            <Button variant="outline" size="sm">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedOrder(order)
+                                setIsDetailsOpen(true)
+                              }}
+                            >
                               View Details
                             </Button>
                           </div>
@@ -455,7 +481,7 @@ export default function ProfilePage() {
                           <div>
                             <p className="font-medium">Order #{order._id.slice(-6).toUpperCase()}</p>
                             <p className="text-sm text-gray-500">
-                              {format(new Date(order.createdAt), 'dd MMM yyyy')} • {order.items.length} item{order.items.length > 1 ? 's' : ''}
+                              {format(new Date(order.createdAt), 'dd MMM yyyy')} • {order.products?.length || 0} item{(order.products?.length || 0) > 1 ? 's' : ''}
                             </p>
                           </div>
                           <div className="text-right">
@@ -475,7 +501,14 @@ export default function ProfilePage() {
 
                         <div className="flex mt-4 justify-between">
                           <div className="flex space-x-2">
-                            <Button variant="outline" size="sm">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedOrder(order)
+                                setIsDetailsOpen(true)
+                              }}
+                            >
                               View Details
                             </Button>
                             {order.status === 'Delivered' && (
@@ -685,6 +718,96 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
+
+      <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Order Details</DialogTitle>
+          </DialogHeader>
+
+          {selectedOrder && (
+            <div className="space-y-6">
+              <div className="flex justify-between items-start border-b pb-4">
+                <div>
+                  <p className="text-sm text-gray-500">Order ID</p>
+                  <p className="font-bold">#{selectedOrder._id.toUpperCase()}</p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Placed on {format(new Date(selectedOrder.createdAt), 'dd MMM yyyy, hh:mm a')}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm text-gray-500">Status</p>
+                  <Badge className={cn(
+                    "mt-1",
+                    selectedOrder.status === 'completed' ? "bg-green-100 text-green-700 hover:bg-green-100" :
+                      selectedOrder.status === 'Processing' ? "bg-yellow-100 text-yellow-700 hover:bg-yellow-100" :
+                        "bg-gray-100 text-gray-700 hover:bg-gray-100"
+                  )}>
+                    {selectedOrder.status}
+                  </Badge>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-semibold mb-3">Items</h3>
+                <div className="space-y-3">
+                  {selectedOrder.products.map((item, idx) => (
+                    <div key={idx} className="flex gap-4 items-center bg-gray-50 p-3 rounded-lg">
+                      <div className="relative h-16 w-16 rounded overflow-hidden flex-shrink-0">
+                        <Image src={item.image || "/placeholder.svg"} alt={item.name} fill className="object-cover" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">{item.name}</p>
+                        <p className="text-xs text-gray-500">Qty: {item.quantity}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-medium text-sm">₹{(item.price * item.quantity).toLocaleString()}</p>
+                        <p className="text-xs text-gray-500">₹{item.price.toLocaleString()} each</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="font-semibold mb-2 text-sm text-gray-500 uppercase tracking-wider">Shipping Address</h3>
+                  {selectedOrder.shippingAddress ? (
+                    <div className="text-sm">
+                      <p className="font-medium">{selectedOrder.shippingAddress.name}</p>
+                      <p>{selectedOrder.shippingAddress.street}</p>
+                      <p>{selectedOrder.shippingAddress.city}, {selectedOrder.shippingAddress.state}</p>
+                      <p>{selectedOrder.shippingAddress.pincode}</p>
+                      <p>{selectedOrder.shippingAddress.country}</p>
+                      <p className="mt-1">Phone: {selectedOrder.shippingAddress.phone}</p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-400">No address information available</p>
+                  )}
+                </div>
+                <div className="bg-gray-50 p-4 rounded-xl">
+                  <h3 className="font-semibold mb-2 text-sm text-gray-500 uppercase tracking-wider">Price Summary</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span>Subtotal</span>
+                      <span>₹{selectedOrder.totalAmount.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Shipping</span>
+                      <span className="text-green-600 font-medium">FREE</span>
+                    </div>
+                    <Separator />
+                    <div className="flex justify-between font-bold text-base pt-1">
+                      <span>Total</span>
+                      <span className="text-green-700">₹{selectedOrder.totalAmount.toLocaleString()}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -6,6 +6,11 @@ import type { Product } from "@/lib/products"
 import { Star, StarHalf, Leaf, Truck, Shield, Recycle, Heart, Sparkles, CheckCircle } from "lucide-react"
 import { useCart } from "@/components/cart-provider"
 import { useToast } from "@/hooks/use-toast"
+import { useRazorpay } from "@/hooks/use-razorpay"
+import { useAuth } from "@/components/auth-provider"
+import AuthModal from "@/components/auth-modal"
+import { isProfileComplete } from "@/lib/utils"
+import { Loader2 } from "lucide-react"
 
 
 async function fetchProduct(id: string): Promise<Product | null> {
@@ -123,6 +128,10 @@ export default function ProductDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const { addToCart } = useCart();
   const { toast } = useToast();
+  const { displayRazorpay } = useRazorpay();
+  const { isAuthenticated, user } = useAuth();
+  const [showAuthModalState, setShowAuthModalState] = useState(false)
+  const [isProcessing, setIsProcessing] = useState(false)
 
   useEffect(() => {
     const getProduct = async () => {
@@ -153,6 +162,99 @@ export default function ProductDetailPage() {
     });
   };
 
+  const handleBuyNow = async () => {
+    if (!product) return
+
+    if (!isAuthenticated) {
+      setShowAuthModalState(true)
+      return
+    }
+
+    if (!isProfileComplete(user)) {
+      toast({
+        title: "Profile Incomplete",
+        description: "Please complete your profile (name, phone, and address) before making a purchase.",
+        variant: "destructive",
+      })
+      router.push('/profile')
+      return
+    }
+
+    setIsProcessing(true)
+    try {
+      // 1. Create Order
+      const response = await fetch('/api/payment/razorpay', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: product.price,
+          currency: 'INR',
+        }),
+      })
+
+      if (!response.ok) throw new Error('Failed to create order')
+      const orderData = await response.json()
+
+      // 2. Display Razorpay
+      await displayRazorpay({
+        amount: orderData.amount,
+        currency: orderData.currency,
+        order_id: orderData.id,
+        name: 'EcoSaro',
+        description: `Purchase ${product.name}`,
+        prefill: {
+          name: user?.name || '',
+          email: user?.email || '',
+        },
+      }, async (response) => {
+        // 3. Verify Payment
+        const verifyRes = await fetch('/api/payment/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature: response.razorpay_signature,
+            items: [{
+              productId: product._id,
+              name: product.name,
+              price: product.price,
+              quantity: 1,
+              image: product.images?.[0]
+            }],
+            totalAmount: product.price,
+            shippingAddress: user?.addresses?.find((a: any) => a.isDefault) || user?.addresses?.[0] || null
+          }),
+        })
+
+        const verifyData = await verifyRes.json()
+
+        if (verifyData.success) {
+          toast({
+            title: "Payment Successful",
+            description: "Your order has been placed successfully!",
+          })
+          router.push('/profile')
+        } else {
+          toast({
+            title: "Payment Verification Failed",
+            description: "Please contact support if the amount was deducted.",
+            variant: "destructive",
+          })
+        }
+      })
+    } catch (error) {
+      console.error('Payment error:', error)
+      toast({
+        title: "Payment Error",
+        description: "Something went wrong. Please try again later.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
   if (isLoading) {
     // You can add a loading skeleton here if you want
     return <div className="min-h-screen flex items-center justify-center">Loading product...</div>;
@@ -162,6 +264,16 @@ export default function ProductDetailPage() {
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-green-50 to-white">
+      {showAuthModalState && (
+        <AuthModal
+          open={showAuthModalState}
+          onOpenChange={(open) => setShowAuthModalState(open)}
+          onSuccess={() => {
+            setShowAuthModalState(false)
+            handleBuyNow()
+          }}
+        />
+      )}
       <div className="container mx-auto px-4 py-8">
         {/* Breadcrumb */}
         <nav className="flex items-center space-x-2 text-sm text-gray-600 mb-8">
@@ -265,10 +377,21 @@ export default function ProductDetailPage() {
                   Add to Cart
                 </button>
                 <button
-                  onClick={() => router.push("/coming-soon")}
-                  className="w-full border-2 border-green-600 text-green-700 py-4 px-6 rounded-xl font-semibold hover:bg-green-50 transition-colors"
+                  onClick={handleBuyNow}
+                  disabled={isProcessing || product.stock === 0}
+                  className="w-full border-2 border-green-600 text-green-700 py-4 px-6 rounded-xl font-semibold hover:bg-green-50 transition-colors flex items-center justify-center gap-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
                 >
-                  Buy Now
+                  {isProcessing ? (
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-5 w-5" />
+                      Buy Now
+                    </>
+                  )}
                 </button>
               </div>
 
