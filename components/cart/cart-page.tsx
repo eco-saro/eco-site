@@ -13,6 +13,8 @@ import { useAuth } from "@/components/auth-provider"
 import { Loader2, ShoppingBag, Trash2, ShieldCheck } from "lucide-react"
 import CartEmpty from "./cart-empty"
 import AuthModal from "@/components/auth-modal"
+import { useRazorpay } from "@/hooks/use-razorpay"
+import { isProfileComplete } from "@/lib/utils"
 
 export default function CartPage() {
   const router = useRouter()
@@ -24,6 +26,7 @@ export default function CartPage() {
   const [couponApplied, setCouponApplied] = useState(false)
   const [showAuthModalState, setShowAuthModalState] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const { displayRazorpay } = useRazorpay()
 
   useEffect(() => {
     setMounted(true)
@@ -66,7 +69,95 @@ export default function CartPage() {
   }
 
   const handleRazorpayPayment = async () => {
-    router.push("/coming-soon")
+    if (!isAuthenticated) {
+      setShowAuthModalState(true)
+      return
+    }
+
+    if (!isProfileComplete(user)) {
+      toast({
+        title: "Profile Incomplete",
+        description: "Please complete your profile (name, phone, and address) before making a purchase.",
+        variant: "destructive",
+      })
+      router.push('/profile')
+      return
+    }
+
+    setIsProcessing(true)
+    try {
+      // 1. Create Order
+      const response = await fetch('/api/payment/razorpay', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: total,
+          currency: 'INR',
+        }),
+      })
+
+      if (!response.ok) throw new Error('Failed to create order')
+      const orderData = await response.json()
+
+      // 2. Display Razorpay
+      await displayRazorpay({
+        amount: orderData.amount,
+        currency: orderData.currency,
+        order_id: orderData.id,
+        name: 'EcoSaro',
+        description: 'Payment for your order',
+        prefill: {
+          name: user?.name || '',
+          email: user?.email || '',
+        },
+      }, async (response) => {
+        // 3. Verify Payment
+        const verifyRes = await fetch('/api/payment/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature: response.razorpay_signature,
+            items: cartItems.map(item => ({
+              productId: item.id,
+              name: item.name,
+              price: item.price,
+              quantity: item.quantity,
+              image: item.image
+            })),
+            totalAmount: total,
+            shippingAddress: user?.addresses?.find((a: any) => a.isDefault) || user?.addresses?.[0] || null
+          }),
+        })
+
+        const verifyData = await verifyRes.json()
+
+        if (verifyData.success) {
+          toast({
+            title: "Payment Successful",
+            description: "Your order has been placed successfully!",
+          })
+          clearCart()
+          router.push('/profile')
+        } else {
+          toast({
+            title: "Payment Verification Failed",
+            description: "Please contact support if the amount was deducted.",
+            variant: "destructive",
+          })
+        }
+      })
+    } catch (error) {
+      console.error('Payment error:', error)
+      toast({
+        title: "Payment Error",
+        description: "Something went wrong. Please try again later.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsProcessing(false)
+    }
   }
 
 

@@ -9,9 +9,11 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface OrderItem {
   product: {
+    _id: string;
     name: string;
   };
   quantity: number;
+  price: number;
 }
 
 interface Order {
@@ -21,8 +23,8 @@ interface Order {
   user: {
     name: string;
   };
-  items: OrderItem[];
-  total: number;
+  products: OrderItem[];
+  totalAmount: number;
 }
 
 interface Pagination {
@@ -43,7 +45,7 @@ export default function OrdersPage() {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch(`/api/orders?page=${currentPage}&limit=10`);
+        const response = await fetch(`/api/orders?dashboard=true&page=${currentPage}&limit=10`);
         if (!response.ok) {
           throw new Error('Failed to fetch orders');
         }
@@ -104,7 +106,7 @@ export default function OrdersPage() {
                   <TableCell>
                     <Badge variant={order.status === 'delivered' ? 'default' : 'secondary'}>{order.status}</Badge>
                   </TableCell>
-                  <TableCell className="text-right">₹{order.total.toFixed(2)}</TableCell>
+                  <TableCell className="text-right">₹{order.totalAmount?.toFixed(2) || "0.00"}</TableCell>
                 </TableRow>
               ))
             ) : (

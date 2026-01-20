@@ -12,7 +12,7 @@ import { Vendor } from "../../../models/vendor";
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions);
 
-  if (!session || !session.user || (session.user as any).role !== "vendor") {
+  if (!session?.user) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
@@ -20,22 +20,29 @@ export async function GET(req: Request) {
 
   try {
     const { searchParams } = new URL(req.url);
-    const page = parseInt(searchParams.get('page') || '1', 10);
-    const limit = parseInt(searchParams.get('limit') || '10', 10);
+    const page = Number.parseInt(searchParams.get('page') || '1', 10);
+    const limit = Number.parseInt(searchParams.get('limit') || '10', 10);
     const skip = (page - 1) * limit;
 
-    const vendor = await Vendor.findOne({ user: session.user.id }).select('products');
+    const userId = (session.user as any).id;
+    const userRole = (session.user as any).role;
+    const isDashboard = searchParams.get('dashboard') === 'true';
 
-    if (!vendor) {
-      return NextResponse.json({ message: "Vendor profile not found for this user." }, { status: 404 });
+    let orderFilter: any = {};
+
+    if (userRole === "vendor" && isDashboard) {
+      const vendor = await Vendor.findOne({ user: userId });
+      if (!vendor) {
+        return NextResponse.json({ message: "Vendor profile not found" }, { status: 404 });
+      }
+      orderFilter = { 'products.vendor': vendor._id };
+    } else {
+      orderFilter = { user: userId };
     }
 
-    const orderFilter = { 'items.product': { $in: vendor.products } };
-
-    // Find orders that contain at least one product from this vendor
     const orders = await Order.find(orderFilter)
       .populate('user', 'name email')
-      .populate('items.product', 'name price images')
+      .populate('products.product', 'name price images')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
@@ -44,6 +51,7 @@ export async function GET(req: Request) {
     const totalPages = Math.ceil(totalOrders / limit);
 
     return NextResponse.json({
+      success: true,
       orders,
       pagination: {
         currentPage: page,
