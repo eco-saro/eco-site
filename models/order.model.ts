@@ -22,6 +22,12 @@ export interface IOrder extends Document {
     country: string;
   };
   paymentMethod: 'COD' | 'Card' | 'UPI';
+  shiprocketOrderId?: string;
+  shiprocketShipmentId?: string;
+  shiprocketAWB?: string;
+  shiprocketCourier?: string;
+  trackingUrl?: string;
+  shippingStatus?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -44,6 +50,12 @@ const OrderSchema = new Schema<IOrder>({
     name: String, phone: String, street: String, city: String, state: String, pincode: String, country: String,
   },
   paymentMethod: { type: String, enum: ['COD', 'Card', 'UPI'], default: 'COD' },
+  shiprocketOrderId: String,
+  shiprocketShipmentId: String,
+  shiprocketAWB: String,
+  shiprocketCourier: String,
+  trackingUrl: String,
+  shippingStatus: String,
 }, { timestamps: true });
 
 export const Order = models.Order || model<IOrder>('Order', OrderSchema);

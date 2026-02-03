@@ -16,12 +16,14 @@ import { Separator } from "@/components/ui/separator"
 import { ChevronLeft, CreditCard, Landmark, Truck, Wallet } from "lucide-react"
 import AuthModal from "@/components/auth-modal"
 import { useToast } from "@/hooks/use-toast"
+import { useRazorpay } from "@/hooks/use-razorpay"
 
 export default function CheckoutPageClient() {
   const router = useRouter()
   const { cart, clearCart, totalPrice } = useCart()
   const { user } = useAuth()
   const { toast } = useToast()
+  const { displayRazorpay } = useRazorpay()
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
   const [formErrors, setFormErrors] = useState<Record<string, string>>({})
@@ -91,8 +93,122 @@ export default function CheckoutPageClient() {
     return Object.keys(errors).length === 0
   }
 
-  const handlePlaceOrder = () => {
-    router.push("/coming-soon")
+  const handlePlaceOrder = async () => {
+    if (!validateForm()) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields correctly.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (!user) {
+      setIsAuthModalOpen(true)
+      return
+    }
+
+    setIsProcessing(true)
+    addDebug(`Processing ${formData.paymentMethod} order...`)
+
+    try {
+      if (formData.paymentMethod === "cod") {
+        // COD Flow
+        const res = await fetch("/api/orders", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            items: cart,
+            totalAmount: totalPrice(),
+            shippingAddress: {
+              name: formData.fullName,
+              phone: formData.phoneNumber,
+              street: `${formData.addressLine1} ${formData.addressLine2}`.trim(),
+              city: formData.city,
+              state: formData.state,
+              pincode: formData.pincode,
+              country: "India",
+            },
+            paymentMethod: "COD",
+          }),
+        })
+
+        const data = await res.json()
+        if (data.success) {
+          clearCart()
+          router.push(`/order-confirmation?orderId=${data.orderId}`)
+        } else {
+          throw new Error(data.message || "Failed to place order")
+        }
+      } else {
+        // Razorpay Flow
+        const orderRes = await fetch("/api/payment/razorpay", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            amount: totalPrice(),
+            currency: "INR",
+          }),
+        })
+
+        const razorpayOrder = await orderRes.json()
+
+        displayRazorpay(
+          {
+            amount: razorpayOrder.amount,
+            currency: razorpayOrder.currency,
+            order_id: razorpayOrder.id,
+            prefill: {
+              name: formData.fullName,
+              email: user.email || "",
+              contact: formData.phoneNumber,
+            },
+          },
+          async (response) => {
+            addDebug("Razorpay payment successful, verifying...")
+            const verifyRes = await fetch("/api/payment/verify", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                ...response,
+                items: cart,
+                totalAmount: totalPrice(),
+                shippingAddress: {
+                  name: formData.fullName,
+                  phone: formData.phoneNumber,
+                  street: `${formData.addressLine1} ${formData.addressLine2}`.trim(),
+                  city: formData.city,
+                  state: formData.state,
+                  pincode: formData.pincode,
+                  country: "India",
+                },
+              }),
+            })
+
+            const verifyData = await verifyRes.json()
+            if (verifyData.success) {
+              clearCart()
+              router.push(`/order-confirmation?orderId=${verifyData.orderId}`)
+            } else {
+              toast({
+                title: "Verification Failed",
+                description: verifyData.message || "Failed to verify payment",
+                variant: "destructive",
+              })
+            }
+          }
+        )
+      }
+    } catch (error: any) {
+      console.error("Order error:", error)
+      toast({
+        title: "Order Failed",
+        description: error.message || "Something went wrong. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsProcessing(false)
+    }
   }
 
   const getPaymentMethodLabel = (method: string) => {

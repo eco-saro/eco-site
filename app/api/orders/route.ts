@@ -4,6 +4,8 @@ import { authOptions } from "@/lib/auth";
 import db from "../../../lib/mongodb";
 import { Order } from "../../../models/order.model";
 import { Vendor } from "../../../models/vendor";
+import { Product } from "../../../models/product.model";
+import { shiprocket } from "../../../lib/shiprocket";
 
 /**
  * GET /api/orders
@@ -62,6 +64,102 @@ export async function GET(req: Request) {
     });
   } catch (error) {
     console.error("Failed to fetch orders:", error);
+    return NextResponse.json(
+      { message: "Internal Server Error" },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * POST /api/orders
+ * Creates a new order (primarily for COD).
+ */
+export async function POST(req: Request) {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }
+
+  await db();
+
+  try {
+    const { items, totalAmount, shippingAddress, paymentMethod } = await req.json();
+
+    // Map items to include vendor info
+    const processedItems = await Promise.all(items.map(async (item: any) => {
+      if (item.vendor) return item;
+      const product = await Product.findById(item.id || item.productId);
+      return {
+        product: item.id || item.productId,
+        vendor: product?.vendor,
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+        image: item.image
+      }
+    }));
+
+    const newOrder = await Order.create({
+      user: (session.user as any).id,
+      products: processedItems,
+      totalAmount,
+      status: paymentMethod === 'COD' ? 'Processing' : 'Pending',
+      paymentMethod: paymentMethod || 'COD',
+      shippingAddress
+    });
+
+    // Create Order in Shiprocket
+    try {
+      console.log(`[Orders] 🔄 Initiating Shiprocket sync (COD) for order ${newOrder._id}`);
+
+      const shiprocketOrder = await shiprocket.createOrder({
+        order_id: newOrder._id.toString(),
+        order_date: new Date().toISOString().slice(0, 16).replace('T', ' '),
+        billing_customer_name: shippingAddress?.name?.split(' ')[0] || session.user.name?.split(' ')[0] || "Customer",
+        billing_last_name: shippingAddress?.name?.split(' ').slice(1).join(' ') || "User",
+        billing_address: shippingAddress?.street || "Not Provided",
+        billing_city: shippingAddress?.city || "Not Provided",
+        billing_pincode: shippingAddress?.pincode || "000000",
+        billing_state: shippingAddress?.state || "Not Provided",
+        billing_country: shippingAddress?.country || "India",
+        billing_email: session.user.email || "no-email@provided.com",
+        billing_phone: shippingAddress?.phone || "0000000000",
+        shipping_is_billing: true,
+        order_items: processedItems.map((item: any) => ({
+          name: item.name,
+          sku: item.product.toString(),
+          units: item.quantity,
+          selling_price: item.price
+        })),
+        payment_method: "COD",
+        sub_total: totalAmount,
+        length: 10,
+        breadth: 10,
+        height: 10,
+        weight: 0.5
+      });
+
+      if (shiprocketOrder?.order_id) {
+        console.log(`[Orders] ✅ Shiprocket order synchronized successfully (COD). SR_ID: ${shiprocketOrder.order_id}`);
+        await Order.findByIdAndUpdate(newOrder._id, {
+          shiprocketOrderId: shiprocketOrder.order_id,
+          shiprocketShipmentId: shiprocketOrder.shipment_id,
+          shippingStatus: "Processing"
+        });
+      }
+    } catch (srError: any) {
+      console.error("[Orders] ⚠️ Shiprocket Sync Failed (Non-blocking):", srError.message || srError);
+    }
+
+    return NextResponse.json({
+      success: true,
+      orderId: newOrder._id,
+      message: "Order created successfully"
+    });
+  } catch (error) {
+    console.error("Failed to create order:", error);
     return NextResponse.json(
       { message: "Internal Server Error" },
       { status: 500 }
