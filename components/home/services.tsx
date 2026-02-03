@@ -15,21 +15,21 @@ const services = [
     name: "Organic Pest Control",
     description: "Eco-friendly pest management solutions using natural ingredients.",
     image: "/pestcntrl.webp?height=400&width=400",
-    price: "Starting at $49",
+    price: "Starting at Rs 49",
   },
   {
     id: "2",
     name: "Garden Setup & Maintenance",
     description: "Professional gardening services to create and maintain your green space.",
     image: "/plants.jpg?height=400&width=400",
-    price: "Starting at $99",
+    price: "Starting at Rs 99",
   },
   {
     id: "3",
     name: "Sustainable Landscaping",
     description: "Transform your outdoor space with sustainable landscaping solutions.",
     image: "/green service.jpg?height=400&width=400",
-    price: "Starting at $199",
+    price: "Starting at Rs 199",
   },
 ]
 

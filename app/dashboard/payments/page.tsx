@@ -1,15 +1,15 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../components/ui/card"
 import { Button } from "../../../components/ui/button"
 import { Input } from "../../../components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../components/ui/tabs"
-import { 
-  Search, 
-  DollarSign, 
-  Filter, 
-  Download, 
+import {
+  Search,
+  DollarSign,
+  Filter,
+  Download,
   Calendar,
   ArrowDown,
   ArrowUp,
@@ -17,344 +17,240 @@ import {
   CreditCard,
   CheckCircle2,
   AlertTriangle,
-  X
+  X,
+  Loader2,
+  Banknote
 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../components/ui/select"
 import { Badge } from "../../../components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../../components/ui/table"
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious
-} from "../../../components/ui/pagination"
-
-// Mock data for payments
-const mockPayments = [
-  {
-    id: "PAY-39281",
-    date: "2025-06-01",
-    amount: 1250.75,
-    type: "payout",
-    status: "completed",
-    reference: "Monthly payout"
-  },
-  {
-    id: "PAY-39280",
-    date: "2025-05-15",
-    amount: 954.80,
-    type: "payout",
-    status: "completed",
-    reference: "Bi-weekly payout"
-  },
-  {
-    id: "PAY-39275",
-    date: "2025-05-01",
-    amount: 1498.32,
-    type: "payout",
-    status: "completed",
-    reference: "Monthly payout"
-  },
-  {
-    id: "ORD-38295",
-    date: "2025-06-01",
-    amount: 125.99,
-    type: "sale",
-    status: "completed",
-    reference: "Order #38295"
-  },
-  {
-    id: "ORD-38294",
-    date: "2025-06-01",
-    amount: 89.95,
-    type: "sale",
-    status: "completed",
-    reference: "Order #38294"
-  },
-  {
-    id: "REF-1039",
-    date: "2025-05-30",
-    amount: -45.50,
-    type: "refund",
-    status: "completed",
-    reference: "Refund for Order #38290"
-  },
-  {
-    id: "ORD-38293",
-    date: "2025-05-31",
-    amount: 235.49,
-    type: "sale",
-    status: "pending",
-    reference: "Order #38293"
-  },
-  {
-    id: "REF-1038",
-    date: "2025-05-28",
-    amount: -35.75,
-    type: "refund",
-    status: "completed",
-    reference: "Refund for Order #38285"
-  },
-  {
-    id: "FEE-5932",
-    date: "2025-05-31",
-    amount: -79.99,
-    type: "fee",
-    status: "completed",
-    reference: "Platform commission"
-  },
-]
-
-// Mock earnings data
-const earningsData = {
-  totalEarnings: 4875.32,
-  pendingPayouts: 784.50,
-  processingFees: 189.75,
-  refundsTotal: 81.25,
-  availableBalance: 513.82
-}
+import { format } from "date-fns"
+import { Alert, AlertDescription, AlertTitle } from "../../../components/ui/alert"
+import Link from "next/link"
 
 export default function PaymentsPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [typeFilter, setTypeFilter] = useState("all")
-  const [dateRange, setDateRange] = useState("all")
   const [currentTab, setCurrentTab] = useState("all")
+  const [isLoading, setIsLoading] = useState(true)
+  const [data, setData] = useState<any>(null)
 
-  // Filter payments based on search, type, date range, and current tab
-  const filteredPayments = mockPayments.filter(payment => {
-    const matchesSearch = payment.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      payment.reference.toLowerCase().includes(searchTerm.toLowerCase())
-    
-    const matchesType = typeFilter === "all" || payment.type === typeFilter
-    
-    // Date filtering would be implemented here with actual date parsing
-    const matchesDateRange = true
-    
-    const matchesTab = currentTab === "all" || 
-      (currentTab === "incoming" && (payment.type === "sale" || payment.type === "payout")) ||
-      (currentTab === "outgoing" && (payment.type === "refund" || payment.type === "fee"))
-    
-    return matchesSearch && matchesType && matchesDateRange && matchesTab
-  })
-
-  const getAmountColor = (payment: typeof mockPayments[0]) => {
-    if (payment.type === "sale" || payment.type === "payout") {
-      return "text-green-600";
-    } else if (payment.type === "refund" || payment.type === "fee") {
-      return "text-red-600";
+  useEffect(() => {
+    const fetchPayments = async () => {
+      try {
+        const response = await fetch("/api/vendor/payments")
+        const result = await response.json()
+        if (result.success) {
+          setData(result)
+        }
+      } catch (error) {
+        console.error("Failed to fetch payments:", error)
+      } finally {
+        setIsLoading(false)
+      }
     }
-    return "";
+    fetchPayments()
+  }, [])
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-10 w-10 animate-spin text-emerald-600" />
+      </div>
+    )
   }
 
-  const getAmountPrefix = (payment: typeof mockPayments[0]) => {
-    if (payment.type === "sale" || payment.type === "payout") {
-      return "+";
-    } else if (payment.type === "refund" || payment.type === "fee") {
-      return "";  // Negative sign already included in the amount
-    }
-    return "";
+  const { metrics, transactions, vendor } = data || { metrics: {}, transactions: [], vendor: {} }
+
+  const filteredPayments = transactions.filter((payment: any) => {
+    const matchesSearch = payment.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      payment.reference.toLowerCase().includes(searchTerm.toLowerCase())
+
+    const matchesType = typeFilter === "all" || payment.type === typeFilter
+
+    const matchesTab = currentTab === "all" ||
+      (currentTab === "incoming" && (payment.type === "sale")) ||
+      (currentTab === "outgoing" && (payment.type === "payout" || payment.type === "refund"))
+
+    return matchesSearch && matchesType && matchesTab
+  })
+
+  const getAmountColor = (payment: any) => {
+    if (payment.type === "sale") return "text-emerald-600";
+    if (payment.type === "payout" || payment.type === "refund") return "text-rose-600";
+    return "text-slate-600";
   }
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "completed":
-        return <Badge className="bg-green-100 text-green-800 border-green-200">Completed</Badge>
+        return <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200">Completed</Badge>
       case "pending":
-        return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">Pending</Badge>
+        return <Badge className="bg-amber-100 text-amber-800 border-amber-200">Pending</Badge>
+      case "blocked":
+        return <Badge className="bg-rose-100 text-rose-800 border-rose-200">Blocked</Badge>
       case "failed":
-        return <Badge className="bg-red-100 text-red-800 border-red-200">Failed</Badge>
+        return <Badge className="bg-rose-100 text-rose-800 border-rose-200">Failed</Badge>
       default:
-        return <Badge>{status}</Badge>
+        return <Badge variant="outline" className="capitalize">{status}</Badge>
     }
   }
 
   const getTypeIcon = (type: string) => {
     switch (type) {
       case "sale":
-        return <ArrowDown className="h-4 w-4 text-green-600" />
+        return <ArrowDown className="h-4 w-4 text-emerald-600" />
       case "payout":
-        return <CreditCard className="h-4 w-4 text-blue-600" />
+        return <Banknote className="h-4 w-4 text-rose-600" />
       case "refund":
-        return <ArrowUp className="h-4 w-4 text-red-600" />
-      case "fee":
-        return <DollarSign className="h-4 w-4 text-gray-600" />
+        return <ArrowUp className="h-4 w-4 text-rose-600" />
       default:
-        return null
+        return <FileText className="h-4 w-4 text-slate-400" />
     }
   }
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
         <div>
-          <h1 className="text-3xl font-bold">Payments & Transactions</h1>
-          <p className="text-gray-500">Track your sales, payouts and refunds</p>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Payments & Payouts</h1>
+          <p className="text-slate-500 font-medium">Track your income and settlement history</p>
         </div>
         <div className="mt-4 sm:mt-0 flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" className="flex items-center gap-1">
-            <Calendar className="h-4 w-4" />
-            Date Range
-          </Button>
-          <Button variant="outline" size="sm" className="flex items-center gap-1">
-            <Download className="h-4 w-4" />
-            Export Statement
+          <Button variant="outline" className="font-bold border-slate-200 shadow-sm">
+            <Download className="h-4 w-4 mr-2" />
+            Download Report
           </Button>
         </div>
       </div>
 
-      {/* Earnings Summary Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <Card>
+      {/* Bank Validation Warning */}
+      {!vendor.hasBankDetails && (
+        <Alert className="bg-rose-50 border-rose-200 text-rose-900">
+          <AlertTriangle className="h-5 w-5 text-rose-600" />
+          <AlertTitle className="font-bold">Payouts are Blocked</AlertTitle>
+          <AlertDescription className="font-medium">
+            ⚠️ Add your bank details to receive payouts. Currently, all your earnings are being held.
+            <Link href="/dashboard/store" className="ml-2 underline font-black">Go to Settings</Link>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Metrics */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <Card className="border-none shadow-sm bg-emerald-50/50">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
+            <CardTitle className="text-xs font-bold text-emerald-600 uppercase tracking-widest">Total Earnings</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">${earningsData.totalEarnings.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground mt-1">All time earnings</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Available Balance</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${earningsData.availableBalance.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground mt-1">Ready for withdrawal</p>
+            <div className="text-2xl font-black text-slate-900">₹{metrics.totalEarnings?.toLocaleString() || 0}</div>
+            <p className="text-xs text-emerald-600 font-bold mt-1">Successfully settled</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-none shadow-sm bg-amber-50/50">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Pending Payouts</CardTitle>
+            <CardTitle className="text-xs font-bold text-amber-600 uppercase tracking-widest">Pending Payouts</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">${earningsData.pendingPayouts.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground mt-1">Processing / on hold</p>
+            <div className="text-2xl font-black text-slate-900">₹{metrics.pendingPayouts?.toLocaleString() || 0}</div>
+            <p className="text-xs text-amber-600 font-bold mt-1">Held or processing</p>
           </CardContent>
         </Card>
-        
-        <Card>
+
+        <Card className="border-none shadow-sm bg-slate-50">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Processing Fees</CardTitle>
+            <CardTitle className="text-xs font-bold text-slate-500 uppercase tracking-widest">Processing Fees</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-600">${earningsData.processingFees.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground mt-1">Platform & payment fees</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Refunds</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">${earningsData.refundsTotal.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground mt-1">Refunds processed</p>
+            <div className="text-2xl font-black text-slate-900">₹{metrics.processingFees?.toLocaleString() || 0}</div>
+            <p className="text-xs text-slate-400 font-bold mt-1">Platform commission</p>
           </CardContent>
         </Card>
       </div>
 
-      <Card>
-        <CardHeader className="pb-3">
+      <Card className="border-none shadow-sm overflow-hidden">
+        <CardHeader className="pb-3 bg-white border-b border-slate-50">
           <Tabs defaultValue="all" className="w-full" onValueChange={setCurrentTab}>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <TabsList>
-                <TabsTrigger value="all">All Transactions</TabsTrigger>
-                <TabsTrigger value="incoming">Incoming</TabsTrigger>
-                <TabsTrigger value="outgoing">Outgoing</TabsTrigger>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <TabsList className="bg-slate-100/50 p-1">
+                <TabsTrigger value="all" className="font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm">All</TabsTrigger>
+                <TabsTrigger value="incoming" className="font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm text-emerald-600">Earnings</TabsTrigger>
+                <TabsTrigger value="outgoing" className="font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm text-rose-600">Payouts</TabsTrigger>
               </TabsList>
-              
-              <div className="flex gap-2">
+
+              <div className="flex gap-3 flex-1 md:max-w-md">
                 <div className="relative flex-1">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                   <Input
-                    placeholder="Search transactions..."
-                    className="pl-8 w-full sm:w-auto"
+                    placeholder="Search by ID or reference..."
+                    className="pl-10 h-11 bg-slate-50 border-none focus-visible:ring-1 focus-visible:ring-emerald-500 font-medium"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
                 </div>
-                
-                <Select
-                  value={typeFilter}
-                  onValueChange={setTypeFilter}
-                >
-                  <SelectTrigger className="w-[140px]">
-                    <SelectValue placeholder="Type" />
+
+                <Select value={typeFilter} onValueChange={setTypeFilter}>
+                  <SelectTrigger className="w-[140px] h-11 bg-slate-50 border-none font-bold">
+                    <SelectValue placeholder="All Types" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Types</SelectItem>
-                    <SelectItem value="sale">Sales</SelectItem>
+                    <SelectItem value="sale">Earnings</SelectItem>
                     <SelectItem value="payout">Payouts</SelectItem>
                     <SelectItem value="refund">Refunds</SelectItem>
-                    <SelectItem value="fee">Fees</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
           </Tabs>
         </CardHeader>
-        
-        <CardContent>
+
+        <CardContent className="p-0">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Transaction ID</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Reference</TableHead>
-                <TableHead>Status</TableHead>
+              <TableRow className="bg-slate-50/50 border-none hover:bg-slate-50/50">
+                <TableHead className="py-4 font-bold text-slate-500">TRANSACTION ID</TableHead>
+                <TableHead className="py-4 font-bold text-slate-500">DATE</TableHead>
+                <TableHead className="py-4 font-bold text-slate-500">TYPE</TableHead>
+                <TableHead className="py-4 font-bold text-slate-500">REFERENCE</TableHead>
+                <TableHead className="py-4 font-bold text-slate-500 text-right">AMOUNT</TableHead>
+                <TableHead className="py-4 font-bold text-slate-500 text-right pr-6">STATUS</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredPayments.length > 0 ? (
-                filteredPayments.map((payment) => (
-                  <TableRow key={payment.id}>
-                    <TableCell className="font-medium">{payment.id}</TableCell>
-                    <TableCell>{payment.date}</TableCell>
+                filteredPayments.map((payment: any) => (
+                  <TableRow key={payment.id} className="border-slate-50 hover:bg-slate-50/30">
+                    <TableCell className="font-mono font-bold text-slate-700">#{payment.id}</TableCell>
+                    <TableCell className="text-slate-500 font-medium">
+                      {format(new Date(payment.date), "dd MMM yyyy")}
+                    </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 font-bold text-xs uppercase tracking-wider text-slate-600">
                         {getTypeIcon(payment.type)}
-                        <span className="capitalize">{payment.type}</span>
+                        {payment.type}
                       </div>
                     </TableCell>
-                    <TableCell className={`font-medium ${getAmountColor(payment)}`}>
-                      {getAmountPrefix(payment)}${Math.abs(payment.amount).toFixed(2)}
+                    <TableCell className="text-slate-500 font-medium">{payment.reference}</TableCell>
+                    <TableCell className={`font-black text-right ${getAmountColor(payment)}`}>
+                      {payment.amount > 0 ? "+" : ""}
+                      ₹{Math.abs(payment.amount).toLocaleString()}
                     </TableCell>
-                    <TableCell>{payment.reference}</TableCell>
-                    <TableCell>{getStatusBadge(payment.status)}</TableCell>
+                    <TableCell className="text-right pr-6">
+                      {getStatusBadge(payment.status)}
+                    </TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-6 text-gray-500">
-                    No transactions found matching your criteria
+                  <TableCell colSpan={6} className="text-center py-20 text-slate-400 font-medium italic">
+                    No transactions found matching your criteria.
                   </TableCell>
                 </TableRow>
               )}
             </TableBody>
           </Table>
-          
-          <Pagination className="mt-4">
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious href="#" />
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationLink href="#" isActive>1</PaginationLink>
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationLink href="#">2</PaginationLink>
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationNext href="#" />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
         </CardContent>
       </Card>
     </div>

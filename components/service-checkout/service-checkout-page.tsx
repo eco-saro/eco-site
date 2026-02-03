@@ -572,21 +572,13 @@ export default function ServiceCheckoutPageClient() {
                 <span className="text-muted-foreground">Service Fee</span>
                 <span>₹{service?.price || 0}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Travel Charges</span>
-                <span>₹0</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Tax (18% GST)</span>
-                <span>₹{service ? Math.round(service.price * 0.18) : 0}</span>
-              </div>
             </div>
 
             <Separator className="my-4" />
 
             <div className="flex justify-between font-semibold text-lg mb-6">
               <span>Total</span>
-              <span>₹{service ? service.price + Math.round(service.price * 0.18) : 0}</span>
+              <span>₹{service ? service.price : 0}</span>
             </div>
 
             <Button

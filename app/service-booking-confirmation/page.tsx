@@ -203,11 +203,6 @@ function BookingContent() {
                 <span className="text-gray-600">Service Fee</span>
                 <span>₹{booking.service.price}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Tax (18% GST)</span>
-                <span>₹{Math.round(booking.service.price * 0.18)}</span>
-              </div>
-              <Separator className="my-2" />
               <div className="flex justify-between font-semibold">
                 <span>Total</span>
                 <span>₹{booking.totalAmount}</span>

@@ -196,7 +196,7 @@ export function AddProductDialog({ onProductAdded }: AddProductDialogProps) {
                                     </div>
                                     <div className="flex justify-between border-t border-gray-200 pt-1 mt-1">
                                         <span className="font-medium text-gray-700">Your Earnings:</span>
-                                        <span className="font-bold text-green-600">${(parseFloat(formData.price) * 0.95).toFixed(2)}</span>
+                                        <span className="font-bold text-green-600">Rs {(parseFloat(formData.price) * 0.95).toFixed(2)}</span>
                                     </div>
                                 </div>
                             )}

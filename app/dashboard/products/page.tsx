@@ -319,7 +319,7 @@ export default function ProductsPage() {
                       </div>
                     </TableCell>
                     <TableCell>{product.category}</TableCell>
-                    <TableCell>${product.price.toFixed(2)}</TableCell>
+                    <TableCell>Rs {product.price.toFixed(2)}</TableCell>
                     <TableCell>
                       <div className="flex items-center">
                         {product.stock === 0 ? (

@@ -1,3 +1,4 @@
+import { Suspense } from "react"
 import type { Metadata } from "next"
 import ProfilePage from "@/components/profile/profile-page"
 
@@ -7,5 +8,9 @@ export const metadata: Metadata = {
 }
 
 export default async function ProfileRoute() {
-  return <ProfilePage />
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ProfilePage />
+    </Suspense>
+  )
 }

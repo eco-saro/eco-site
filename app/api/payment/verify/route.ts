@@ -62,8 +62,10 @@ export async function POST(req: NextRequest) {
             user: (session.user as any).id,
             products: processedItems,
             totalAmount,
-            status: 'completed', // Since payment is verified
-            paymentMethod: 'Card', // Assumption for Razorpay
+            status: 'completed',
+            paymentMethod: 'Card',
+            razorpayOrderId: razorpay_order_id,
+            razorpayPaymentId: razorpay_payment_id,
             shippingAddress: shippingAddress || {
                 name: session.user.name,
                 phone: 'Not Provided',

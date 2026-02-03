@@ -51,22 +51,49 @@ export default function OrderDetails() {
       return
     }
 
-    try {
-      // In a real app, this would be an API call
-      const orders = JSON.parse(localStorage.getItem("ecoSaroOrders") || "[]")
-      const foundOrder = orders.find((o: Order) => o.id === orderId)
+    const fetchOrderDetails = async () => {
+      try {
+        const response = await fetch(`/api/orders/${orderId}`)
+        if (!response.ok) {
+          throw new Error("Order not found")
+        }
+        const data = await response.json()
 
-      if (foundOrder) {
-        setOrder(foundOrder)
-      } else {
-        setError("Order not found")
+        // Map backend Order to frontend Order type
+        const mappedOrder: Order = {
+          id: data._id,
+          date: data.createdAt,
+          items: data.products.map((p: any) => ({
+            id: p.product?._id || p.product,
+            name: p.name,
+            price: p.price,
+            quantity: p.quantity,
+            image: p.image
+          })),
+          totalAmount: data.totalAmount,
+          shippingAddress: {
+            fullName: data.shippingAddress.name,
+            phoneNumber: data.shippingAddress.phone,
+            addressLine1: data.shippingAddress.street,
+            city: data.shippingAddress.city,
+            state: data.shippingAddress.state,
+            pincode: data.shippingAddress.pincode,
+            addressType: "Default", // API doesn't have addressType yet
+          },
+          paymentMethod: data.paymentMethod.toLowerCase(),
+          status: data.status
+        }
+
+        setOrder(mappedOrder)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Error loading order details")
+        console.error(err)
+      } finally {
+        setLoading(false)
       }
-    } catch (err) {
-      setError("Error loading order details")
-      console.error(err)
-    } finally {
-      setLoading(false)
     }
+
+    fetchOrderDetails()
   }, [orderId])
 
   if (loading) {
@@ -223,17 +250,9 @@ export default function OrderDetails() {
                 <span>Subtotal</span>
                 <span>₹{order.totalAmount}</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span>Shipping</span>
-                <span>₹0</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span>Tax</span>
-                <span>₹{Math.round(order.totalAmount * 0.18)}</span>
-              </div>
               <div className="flex justify-between font-semibold pt-2">
-                <span>Total</span>
-                <span>₹{order.totalAmount + Math.round(order.totalAmount * 0.18)}</span>
+                <span>Total Amount Paid</span>
+                <span>₹{order.totalAmount}</span>
               </div>
             </div>
           </CardContent>
@@ -247,7 +266,7 @@ export default function OrderDetails() {
             </Link>
           </Button>
           <Button asChild>
-            <Link href="/profile" className="flex items-center">
+            <Link href="/orders" className="flex items-center">
               <ShoppingBag className="mr-2 h-4 w-4" />
               View All Orders
             </Link>

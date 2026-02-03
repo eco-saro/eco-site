@@ -35,9 +35,7 @@ export default function CartPage() {
   const cartItems = mounted ? cart || [] : []
   const subtotal = cartItems.reduce((total, item) => total + item.price * item.quantity, 0)
   const discount = couponApplied ? subtotal * 0.1 : 0
-  const shipping = subtotal > 0 ? (subtotal > 1000 ? 0 : 100) : 0
-  const tax = (subtotal - discount) * 0.05
-  const total = subtotal - discount + shipping + tax
+  const total = subtotal - discount
 
   const handleQuantityChange = (id: string, newQuantity: number) => {
     if (newQuantity < 1) return
@@ -75,12 +73,7 @@ export default function CartPage() {
     }
 
     if (!isProfileComplete(user)) {
-      toast({
-        title: "Profile Incomplete",
-        description: "Please complete your profile (name, phone, and address) before making a purchase.",
-        variant: "destructive",
-      })
-      router.push('/profile')
+      router.push('/checkout')
       return
     }
 
@@ -109,9 +102,21 @@ export default function CartPage() {
         prefill: {
           name: user?.name || '',
           email: user?.email || '',
+          contact: user?.phone || '',
         },
       }, async (response) => {
         // 3. Verify Payment
+        const shippingAddress = user?.addresses?.find((a: any) => a.isDefault) || user?.addresses?.[0]
+
+        if (!shippingAddress) {
+          toast({
+            title: "Address Error",
+            description: "No shipping address found. Please update your profile.",
+            variant: "destructive",
+          })
+          return
+        }
+
         const verifyRes = await fetch('/api/payment/verify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -127,7 +132,15 @@ export default function CartPage() {
               image: item.image
             })),
             totalAmount: total,
-            shippingAddress: user?.addresses?.find((a: any) => a.isDefault) || user?.addresses?.[0] || null
+            shippingAddress: {
+              name: shippingAddress.name,
+              phone: shippingAddress.phone,
+              street: shippingAddress.street,
+              city: shippingAddress.city,
+              state: shippingAddress.state,
+              pincode: shippingAddress.pincode,
+              country: shippingAddress.country || "India"
+            }
           }),
         })
 
@@ -139,7 +152,7 @@ export default function CartPage() {
             description: "Your order has been placed successfully!",
           })
           clearCart()
-          router.push('/profile')
+          router.push('/orders')
         } else {
           toast({
             title: "Payment Verification Failed",
@@ -148,11 +161,11 @@ export default function CartPage() {
           })
         }
       })
-    } catch (error) {
+    } catch (error: any) {
       console.error('Payment error:', error)
       toast({
         title: "Payment Error",
-        description: "Something went wrong. Please try again later.",
+        description: error.message || "Something went wrong. Please try again later.",
         variant: "destructive",
       })
     } finally {
@@ -195,7 +208,7 @@ export default function CartPage() {
 
                     <div className="flex flex-col flex-1 gap-1">
                       <h3 className="font-medium">{item.name}</h3>
-                      <p className="text-sm text-muted-foreground">₹{item.price.toFixed(2)}</p>
+                      <p className="text-sm text-muted-foreground">Rs {item.price.toFixed(2)}</p>
 
                       <div className="flex items-center justify-between mt-auto">
                         <div className="flex items-center">
@@ -232,7 +245,7 @@ export default function CartPage() {
                     </div>
 
                     <div className="text-right font-medium">
-                      ₹{(item.price * item.quantity).toFixed(2)}
+                      Rs {(item.price * item.quantity).toFixed(2)}
                     </div>
                   </div>
                 ))}
@@ -264,38 +277,27 @@ export default function CartPage() {
             <div className="p-4 space-y-3">
               <div className="flex justify-between">
                 <span>Price ({cartItems.length} items)</span>
-                <span>₹{subtotal.toFixed(2)}</span>
+                <span>Rs {subtotal.toFixed(2)}</span>
               </div>
 
               {couponApplied && (
                 <div className="flex justify-between text-green-600">
                   <span>Discount</span>
-                  <span>-₹{discount.toFixed(2)}</span>
+                  <span>-Rs {discount.toFixed(2)}</span>
                 </div>
               )}
 
-              <div className="flex justify-between">
-                <span>Delivery Charges</span>
-                <span className={shipping === 0 ? "text-green-600" : ""}>
-                  {shipping === 0 ? "FREE" : `₹${shipping.toFixed(2)}`}
-                </span>
-              </div>
-
-              <div className="flex justify-between">
-                <span>GST (5%)</span>
-                <span>₹{tax.toFixed(2)}</span>
-              </div>
 
               <Separator className="my-2" />
 
               <div className="flex justify-between font-bold text-lg">
                 <span>Total Amount</span>
-                <span>₹{total.toFixed(2)}</span>
+                <span>Rs {total.toFixed(2)}</span>
               </div>
 
               {couponApplied && (
                 <div className="text-green-600 text-sm">
-                  You will save ₹{discount.toFixed(2)} on this order
+                  You will save Rs {discount.toFixed(2)} on this order
                 </div>
               )}
 

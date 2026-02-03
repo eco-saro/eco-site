@@ -4,11 +4,11 @@ import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../components/ui/card"
 import { Button } from "../../../components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../components/ui/tabs"
-import { 
-  Download, 
-  Calendar, 
-  LineChart as LineChartIcon, 
-  BarChart3, 
+import {
+  Download,
+  Calendar,
+  LineChart as LineChartIcon,
+  BarChart3,
   PieChart as PieChartIcon,
   ArrowUpRight,
   ArrowDownRight,
@@ -50,21 +50,21 @@ export default function AnalyticsPage() {
     percentageChange: 11.8,
     isPositive: true
   }
-  
+
   const orderData = {
     thisMonth: 267,
     lastMonth: 232,
     percentageChange: 15.1,
     isPositive: true
   }
-  
+
   const customerData = {
     thisMonth: 84,
     lastMonth: 93,
     percentageChange: 9.7,
     isPositive: false
   }
-  
+
   const conversionData = {
     thisMonth: 3.7,
     lastMonth: 3.2,
@@ -162,7 +162,7 @@ export default function AnalyticsPage() {
   ]
 
   const getChangeIndicator = (isPositive: boolean) => {
-    return isPositive ? 
+    return isPositive ?
       <div className="flex items-center text-green-600">
         <ArrowUpRight className="h-4 w-4 mr-1" />
       </div> :
@@ -204,19 +204,19 @@ export default function AnalyticsPage() {
               <SelectItem value="1year">Last Year</SelectItem>
             </SelectContent>
           </Select>
-          
+
           <Button variant="outline" size="sm" className="flex items-center gap-1">
             <Calendar className="h-4 w-4" />
             Custom Range
           </Button>
-          
+
           <Button variant="outline" size="sm" className="flex items-center gap-1">
             <Download className="h-4 w-4" />
             Export Report
           </Button>
         </div>
       </div>
-      
+
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-5 mb-4">
           <TabsTrigger value="overview" className="flex items-center gap-1">
@@ -240,193 +240,193 @@ export default function AnalyticsPage() {
             Order Heatmap
           </TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="overview" className="space-y-4">
           {/* Key Metrics Cards */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex justify-between items-baseline">
-              <div className="text-2xl font-bold">${salesData.thisMonth.toFixed(2)}</div>
-              {getPercentageDisplay(salesData)}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              vs. ${salesData.lastMonth.toFixed(2)} last month
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex justify-between items-baseline">
-              <div className="text-2xl font-bold">{orderData.thisMonth}</div>
-              {getPercentageDisplay(orderData)}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              vs. {orderData.lastMonth} last month
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">New Customers</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex justify-between items-baseline">
-              <div className="text-2xl font-bold">{customerData.thisMonth}</div>
-              {getPercentageDisplay(customerData)}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              vs. {customerData.lastMonth} last month
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Conversion Rate</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex justify-between items-baseline">
-              <div className="text-2xl font-bold">{conversionData.thisMonth}%</div>
-              {getPercentageDisplay(conversionData)}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              vs. {conversionData.lastMonth}% last month
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex justify-between items-baseline">
+                  <div className="text-2xl font-bold">Rs {salesData.thisMonth.toFixed(2)}</div>
+                  {getPercentageDisplay(salesData)}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  vs. Rs {salesData.lastMonth.toFixed(2)} last month
+                </p>
+              </CardContent>
+            </Card>
 
-      <div className="grid gap-5 md:grid-cols-2">
-        {/* Sales Overview Chart Placeholder */}
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <LineChart className="h-5 w-5" />
-              Sales Overview
-            </CardTitle>
-            <CardDescription>
-              Monthly revenue for the past 6 months
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart
-                data={salesTrendsData.monthly}
-                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                <XAxis dataKey="date" stroke="#64748b" />
-                <YAxis stroke="#64748b" />
-                <Tooltip 
-                  formatter={(value) => [`$${value}`, 'Revenue']}
-                  contentStyle={{ backgroundColor: '#ffffff', borderRadius: '6px', boxShadow: '0 2px 5px rgba(0, 0, 0, 0.1)' }}
-                />
-                <Legend />
-                <Line
-                  type="monotone"
-                  dataKey="sales"
-                  stroke="#16a34a"
-                  strokeWidth={2}
-                  dot={{ r: 4, fill: '#16a34a' }}
-                  activeDot={{ r: 6, fill: '#16a34a' }}
-                  name="Revenue"
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-        
-        {/* Top Products */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5" />
-              Top Products
-            </CardTitle>
-            <CardDescription>
-              Best selling products by revenue
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Product</TableHead>
-                  <TableHead className="text-right">Units Sold</TableHead>
-                  <TableHead className="text-right">Revenue</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {topProducts.map((product, index) => (
-                  <TableRow key={index}>
-                    <TableCell className="font-medium">{product.name}</TableCell>
-                    <TableCell className="text-right">{product.sales}</TableCell>
-                    <TableCell className="text-right">${product.revenue.toFixed(2)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-        
-        {/* Traffic Sources */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <PieChart className="h-5 w-5" />
-              Traffic Sources
-            </CardTitle>
-            <CardDescription>
-              Where your customers are coming from
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={trafficSources}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={true}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="percentage"
-                    nameKey="source"
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex justify-between items-baseline">
+                  <div className="text-2xl font-bold">{orderData.thisMonth}</div>
+                  {getPercentageDisplay(orderData)}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  vs. {orderData.lastMonth} last month
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">New Customers</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex justify-between items-baseline">
+                  <div className="text-2xl font-bold">{customerData.thisMonth}</div>
+                  {getPercentageDisplay(customerData)}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  vs. {customerData.lastMonth} last month
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Conversion Rate</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex justify-between items-baseline">
+                  <div className="text-2xl font-bold">{conversionData.thisMonth}%</div>
+                  {getPercentageDisplay(conversionData)}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  vs. {conversionData.lastMonth}% last month
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid gap-5 md:grid-cols-2">
+            {/* Sales Overview Chart Placeholder */}
+            <Card className="md:col-span-2">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <LineChart className="h-5 w-5" />
+                  Sales Overview
+                </CardTitle>
+                <CardDescription>
+                  Monthly revenue for the past 6 months
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={salesTrendsData.monthly}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                   >
-                    {trafficSources.map((entry, index) => (
-                      <Cell 
-                        key={`cell-${index}`} 
-                        fill={[
-                          "#16a34a", // green-600
-                          "#2563eb", // blue-600
-                          "#d97706", // amber-600
-                          "#9333ea", // purple-600
-                          "#dc2626"  // red-600
-                        ][index % 5]} 
-                      />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                    <XAxis dataKey="date" stroke="#64748b" />
+                    <YAxis stroke="#64748b" />
+                    <Tooltip
+                      formatter={(value) => [`Rs ${value}`, 'Revenue']}
+                      contentStyle={{ backgroundColor: '#ffffff', borderRadius: '6px', boxShadow: '0 2px 5px rgba(0, 0, 0, 0.1)' }}
+                    />
+                    <Legend />
+                    <Line
+                      type="monotone"
+                      dataKey="sales"
+                      stroke="#16a34a"
+                      strokeWidth={2}
+                      dot={{ r: 4, fill: '#16a34a' }}
+                      activeDot={{ r: 6, fill: '#16a34a' }}
+                      name="Revenue"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            {/* Top Products */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5" />
+                  Top Products
+                </CardTitle>
+                <CardDescription>
+                  Best selling products by revenue
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Product</TableHead>
+                      <TableHead className="text-right">Units Sold</TableHead>
+                      <TableHead className="text-right">Revenue</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {topProducts.map((product, index) => (
+                      <TableRow key={index}>
+                        <TableCell className="font-medium">{product.name}</TableCell>
+                        <TableCell className="text-right">{product.sales}</TableCell>
+                        <TableCell className="text-right">Rs {product.revenue.toFixed(2)}</TableCell>
+                      </TableRow>
                     ))}
-                  </Pie>
-                  <Tooltip formatter={(value) => `${value}%`} />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+
+            {/* Traffic Sources */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <PieChart className="h-5 w-5" />
+                  Traffic Sources
+                </CardTitle>
+                <CardDescription>
+                  Where your customers are coming from
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={trafficSources}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={true}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="percentage"
+                        nameKey="source"
+                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      >
+                        {trafficSources.map((entry, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={[
+                              "#16a34a", // green-600
+                              "#2563eb", // blue-600
+                              "#d97706", // amber-600
+                              "#9333ea", // purple-600
+                              "#dc2626"  // red-600
+                            ][index % 5]}
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value) => `${value}%`} />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
-        
+
         {/* SALES TRENDS TAB */}
         <TabsContent value="sales" className="space-y-4">
           <div className="grid gap-4 grid-cols-1 md:grid-cols-3 mb-4">
@@ -444,15 +444,15 @@ export default function AnalyticsPage() {
                       <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                       <XAxis dataKey="date" stroke="#64748b" />
                       <YAxis stroke="#64748b" />
-                      <Tooltip 
-                        formatter={(value) => [`$${value}`, 'Sales']}
+                      <Tooltip
+                        formatter={(value) => [`Rs ${value}`, 'Sales']}
                         contentStyle={{ backgroundColor: '#ffffff', borderRadius: '6px' }}
                       />
-                      <Area 
-                        type="monotone" 
-                        dataKey="sales" 
-                        stroke="#16a34a" 
-                        fill="#dcfce7" 
+                      <Area
+                        type="monotone"
+                        dataKey="sales"
+                        stroke="#16a34a"
+                        fill="#dcfce7"
                         name="Daily Sales"
                       />
                     </AreaChart>
@@ -470,7 +470,7 @@ export default function AnalyticsPage() {
                       {salesTrendsData.daily.map((item, index) => (
                         <TableRow key={index}>
                           <TableCell>{item.date}</TableCell>
-                          <TableCell className="text-right">${item.sales.toFixed(2)}</TableCell>
+                          <TableCell className="text-right">Rs {item.sales.toFixed(2)}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -478,7 +478,7 @@ export default function AnalyticsPage() {
                 </div>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium">Weekly Sales</CardTitle>
@@ -493,13 +493,13 @@ export default function AnalyticsPage() {
                       <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                       <XAxis dataKey="date" stroke="#64748b" />
                       <YAxis stroke="#64748b" />
-                      <Tooltip 
-                        formatter={(value) => [`$${value}`, 'Sales']}
+                      <Tooltip
+                        formatter={(value) => [`Rs ${value}`, 'Sales']}
                         contentStyle={{ backgroundColor: '#ffffff', borderRadius: '6px' }}
                       />
-                      <Bar 
-                        dataKey="sales" 
-                        fill="#16a34a" 
+                      <Bar
+                        dataKey="sales"
+                        fill="#16a34a"
                         name="Weekly Sales"
                         radius={[4, 4, 0, 0]}
                       />
@@ -518,7 +518,7 @@ export default function AnalyticsPage() {
                       {salesTrendsData.weekly.map((item, index) => (
                         <TableRow key={index}>
                           <TableCell>{item.date}</TableCell>
-                          <TableCell className="text-right">${item.sales.toFixed(2)}</TableCell>
+                          <TableCell className="text-right">Rs {item.sales.toFixed(2)}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -526,7 +526,7 @@ export default function AnalyticsPage() {
                 </div>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium">Monthly Sales</CardTitle>
@@ -541,14 +541,14 @@ export default function AnalyticsPage() {
                       <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                       <XAxis dataKey="date" stroke="#64748b" />
                       <YAxis stroke="#64748b" />
-                      <Tooltip 
-                        formatter={(value) => [`$${value}`, 'Sales']}
+                      <Tooltip
+                        formatter={(value) => [`Rs ${value}`, 'Sales']}
                         contentStyle={{ backgroundColor: '#ffffff', borderRadius: '6px' }}
                       />
-                      <Line 
-                        type="monotone" 
-                        dataKey="sales" 
-                        stroke="#16a34a" 
+                      <Line
+                        type="monotone"
+                        dataKey="sales"
+                        stroke="#16a34a"
                         strokeWidth={2}
                         dot={{ r: 3, fill: '#16a34a' }}
                         name="Monthly Sales"
@@ -568,7 +568,7 @@ export default function AnalyticsPage() {
                       {salesTrendsData.monthly.map((item, index) => (
                         <TableRow key={index}>
                           <TableCell>{item.date}</TableCell>
-                          <TableCell className="text-right">${item.sales.toFixed(2)}</TableCell>
+                          <TableCell className="text-right">Rs {item.sales.toFixed(2)}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -578,7 +578,7 @@ export default function AnalyticsPage() {
             </Card>
           </div>
         </TabsContent>
-        
+
         {/* PRODUCT PERFORMANCE TAB */}
         <TabsContent value="products" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2 mb-4">
@@ -607,7 +607,7 @@ export default function AnalyticsPage() {
                       <TableRow key={index}>
                         <TableCell className="font-medium">{product.name}</TableCell>
                         <TableCell className="text-right">{product.sold}</TableCell>
-                        <TableCell className="text-right">${product.revenue.toFixed(2)}</TableCell>
+                        <TableCell className="text-right">Rs {product.revenue.toFixed(2)}</TableCell>
                         <TableCell className="text-right">
                           <Badge variant="outline" className="bg-green-50 text-green-700 hover:bg-green-50">
                             {product.conversion}%
@@ -619,7 +619,7 @@ export default function AnalyticsPage() {
                 </Table>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -659,7 +659,7 @@ export default function AnalyticsPage() {
             </Card>
           </div>
         </TabsContent>
-        
+
         {/* TRAFFIC ANALYTICS TAB */}
         <TabsContent value="traffic" className="space-y-4">
           <div className="grid gap-4 grid-cols-1 mb-4">
@@ -704,7 +704,7 @@ export default function AnalyticsPage() {
                 </Table>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -724,36 +724,36 @@ export default function AnalyticsPage() {
                   >
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                     <XAxis type="number" stroke="#64748b" />
-                    <YAxis 
-                      type="category" 
-                      dataKey="page" 
-                      stroke="#64748b" 
+                    <YAxis
+                      type="category"
+                      dataKey="page"
+                      stroke="#64748b"
                       width={150}
                       tick={{ fontSize: 12 }}
                     />
-                    <Tooltip 
+                    <Tooltip
                       formatter={(value, name) => [
-                        name === 'views' ? value : `${value}%`, 
+                        name === 'views' ? value : `${value}%`,
                         name === 'views' ? 'Page Views' : name === 'bounceRate' ? 'Bounce Rate' : 'Conversion Rate'
                       ]}
                       contentStyle={{ backgroundColor: '#ffffff', borderRadius: '6px' }}
                     />
                     <Legend />
-                    <Bar 
-                      dataKey="views" 
-                      fill="#16a34a" 
+                    <Bar
+                      dataKey="views"
+                      fill="#16a34a"
                       name="Page Views"
                       radius={[0, 4, 4, 0]}
                     />
-                    <Bar 
-                      dataKey="bounceRate" 
-                      fill="#dc2626" 
+                    <Bar
+                      dataKey="bounceRate"
+                      fill="#dc2626"
                       name="Bounce Rate %"
                       radius={[0, 4, 4, 0]}
                     />
-                    <Bar 
-                      dataKey="conversionRate" 
-                      fill="#2563eb" 
+                    <Bar
+                      dataKey="conversionRate"
+                      fill="#2563eb"
                       name="Conversion Rate %"
                       radius={[0, 4, 4, 0]}
                     />
@@ -763,7 +763,7 @@ export default function AnalyticsPage() {
             </Card>
           </div>
         </TabsContent>
-        
+
         {/* ORDER HEATMAP TAB */}
         <TabsContent value="orders" className="space-y-4">
           <Card>
@@ -786,22 +786,22 @@ export default function AnalyticsPage() {
                   >
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                     <XAxis type="number" stroke="#64748b" />
-                    <YAxis 
-                      type="category" 
-                      dataKey="region" 
-                      stroke="#64748b" 
+                    <YAxis
+                      type="category"
+                      dataKey="region"
+                      stroke="#64748b"
                       tick={{ fontSize: 12 }}
                     />
-                    <Tooltip 
+                    <Tooltip
                       formatter={(value, name) => [
-                        name === 'revenue' ? `₹${value}` : value, 
+                        name === 'revenue' ? `₹${value}` : value,
                         name === 'revenue' ? 'Revenue' : 'Orders'
                       ]}
                       contentStyle={{ backgroundColor: '#ffffff', borderRadius: '6px' }}
                     />
                     <Legend />
-                    <Bar 
-                      dataKey="orders" 
+                    <Bar
+                      dataKey="orders"
                       name="Orders"
                       fill="#16a34a"
                       radius={[0, 4, 4, 0]}
@@ -809,7 +809,7 @@ export default function AnalyticsPage() {
                   </BarChart>
                 </ResponsiveContainer>
               </div>
-              
+
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -827,8 +827,8 @@ export default function AnalyticsPage() {
                       <TableCell className="text-right">₹{location.revenue}</TableCell>
                       <TableCell className="text-right">
                         <div className="w-full bg-gray-200 rounded-full h-2.5">
-                          <div 
-                            className="bg-green-600 h-2.5 rounded-full" 
+                          <div
+                            className="bg-green-600 h-2.5 rounded-full"
                             style={{ width: `${(location.orders / orderLocationData[0].orders) * 100}%` }}
                           ></div>
                         </div>

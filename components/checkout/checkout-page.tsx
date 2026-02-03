@@ -13,10 +13,12 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Separator } from "@/components/ui/separator"
-import { ChevronLeft, CreditCard, Landmark, Truck, Wallet } from "lucide-react"
-import AuthModal from "@/components/auth-modal"
 import { useToast } from "@/hooks/use-toast"
 import { useRazorpay } from "@/hooks/use-razorpay"
+import { cn } from "@/lib/utils"
+import { Badge } from "@/components/ui/badge"
+import { CheckCircle, ChevronLeft, CreditCard, Landmark, Truck, Wallet } from "lucide-react"
+import AuthModal from "@/components/auth-modal"
 
 export default function CheckoutPageClient() {
   const router = useRouter()
@@ -26,6 +28,7 @@ export default function CheckoutPageClient() {
   const { displayRazorpay } = useRazorpay()
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null)
   const [formErrors, setFormErrors] = useState<Record<string, string>>({})
   const [isClient, setIsClient] = useState(false)
   const [debugInfo, setDebugInfo] = useState<string[]>([])
@@ -55,6 +58,23 @@ export default function CheckoutPageClient() {
     addressType: "home",
     paymentMethod: "cod",
   })
+
+  // Pre-fill form if user has addresses
+  useEffect(() => {
+    if (user && user.addresses && user.addresses.length > 0) {
+      const defaultAddr = user.addresses.find((a: any) => a.isDefault) || user.addresses[0]
+      setSelectedAddressId(defaultAddr._id || 'default')
+      setFormData(prev => ({
+        ...prev,
+        fullName: defaultAddr.name || user.name || "",
+        phoneNumber: defaultAddr.phone || user.phone || "",
+        addressLine1: defaultAddr.street || "",
+        city: defaultAddr.city || "",
+        state: defaultAddr.state || "",
+        pincode: defaultAddr.pincode || "",
+      }))
+    }
+  }, [user])
 
   // Redirect if cart is empty
   useEffect(() => {
@@ -136,7 +156,7 @@ export default function CheckoutPageClient() {
         const data = await res.json()
         if (data.success) {
           clearCart()
-          router.push(`/order-confirmation?orderId=${data.orderId}`)
+          router.push('/orders')
         } else {
           throw new Error(data.message || "Failed to place order")
         }
@@ -188,7 +208,7 @@ export default function CheckoutPageClient() {
             const verifyData = await verifyRes.json()
             if (verifyData.success) {
               clearCart()
-              router.push(`/order-confirmation?orderId=${verifyData.orderId}`)
+              router.push('/orders')
             } else {
               toast({
                 title: "Verification Failed",
@@ -263,128 +283,150 @@ export default function CheckoutPageClient() {
           <div className="bg-white rounded-lg border shadow-sm p-6">
             <h2 className="text-xl font-semibold mb-4">Shipping Address</h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="fullName">
-                  Full Name <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="fullName"
-                  name="fullName"
-                  value={formData.fullName}
-                  onChange={handleInputChange}
-                  className={formErrors.fullName ? "border-red-500" : ""}
-                />
-                {formErrors.fullName && <p className="text-red-500 text-sm">{formErrors.fullName}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="phoneNumber">
-                  Phone Number <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="phoneNumber"
-                  name="phoneNumber"
-                  value={formData.phoneNumber}
-                  onChange={handleInputChange}
-                  className={formErrors.phoneNumber ? "border-red-500" : ""}
-                />
-                {formErrors.phoneNumber && <p className="text-red-500 text-sm">{formErrors.phoneNumber}</p>}
-              </div>
-
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="addressLine1">
-                  Address Line 1 <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="addressLine1"
-                  name="addressLine1"
-                  value={formData.addressLine1}
-                  onChange={handleInputChange}
-                  className={formErrors.addressLine1 ? "border-red-500" : ""}
-                />
-                {formErrors.addressLine1 && <p className="text-red-500 text-sm">{formErrors.addressLine1}</p>}
-              </div>
-
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="addressLine2">Address Line 2 (Optional)</Label>
-                <Input
-                  id="addressLine2"
-                  name="addressLine2"
-                  value={formData.addressLine2}
-                  onChange={handleInputChange}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="city">
-                  City <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="city"
-                  name="city"
-                  value={formData.city}
-                  onChange={handleInputChange}
-                  className={formErrors.city ? "border-red-500" : ""}
-                />
-                {formErrors.city && <p className="text-red-500 text-sm">{formErrors.city}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="state">
-                  State <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="state"
-                  name="state"
-                  value={formData.state}
-                  onChange={handleInputChange}
-                  className={formErrors.state ? "border-red-500" : ""}
-                />
-                {formErrors.state && <p className="text-red-500 text-sm">{formErrors.state}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="pincode">
-                  Pincode <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="pincode"
-                  name="pincode"
-                  value={formData.pincode}
-                  onChange={handleInputChange}
-                  className={formErrors.pincode ? "border-red-500" : ""}
-                />
-                {formErrors.pincode && <p className="text-red-500 text-sm">{formErrors.pincode}</p>}
-              </div>
-            </div>
-
-            <div className="mt-4">
-              <Label className="mb-2 block">Address Type</Label>
-              <RadioGroup
-                value={formData.addressType}
-                onValueChange={(value) => setFormData((prev) => ({ ...prev, addressType: value }))}
-                className="flex flex-wrap gap-4"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="home" id="home" />
-                  <Label htmlFor="home" className="cursor-pointer">
-                    Home
-                  </Label>
+            <div className="space-y-4">
+              {user?.addresses && user.addresses.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                  {user.addresses.map((addr: any) => (
+                    <div
+                      key={addr._id || addr.label}
+                      onClick={() => {
+                        setSelectedAddressId(addr._id || addr.label)
+                        setFormData(prev => ({
+                          ...prev,
+                          fullName: addr.name || user.name,
+                          phoneNumber: addr.phone || user.phone,
+                          addressLine1: addr.street,
+                          city: addr.city,
+                          state: addr.state,
+                          pincode: addr.pincode,
+                        }))
+                      }}
+                      className={cn(
+                        "p-4 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md",
+                        selectedAddressId === (addr._id || addr.label)
+                          ? "border-emerald-600 bg-emerald-50/50"
+                          : "border-gray-100 bg-gray-50/30"
+                      )}
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <Badge variant="outline" className="bg-white text-emerald-700 border-emerald-200">
+                          {addr.label || 'Address'}
+                        </Badge>
+                        {selectedAddressId === (addr._id || addr.label) && (
+                          <CheckCircle className="h-5 w-5 text-emerald-600" />
+                        )}
+                      </div>
+                      <p className="font-bold text-gray-900">{addr.name}</p>
+                      <p className="text-sm text-gray-600 mt-1 line-clamp-2">{addr.street}</p>
+                      <p className="text-sm text-gray-600">{addr.city}, {addr.state} - {addr.pincode}</p>
+                      <p className="text-sm text-gray-500 mt-2 flex items-center gap-1">
+                        <Truck className="h-3 w-3" /> {addr.phone}
+                      </p>
+                    </div>
+                  ))}
                 </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="work" id="work" />
-                  <Label htmlFor="work" className="cursor-pointer">
-                    Work
+              ) : null}
+
+              <Separator className="my-6" />
+              <p className="text-sm font-medium text-gray-500 mb-4">
+                {user?.addresses?.length ? "Or enter a new address below:" : "Enter your shipping details:"}
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="fullName">
+                    Full Name <span className="text-red-500">*</span>
                   </Label>
+                  <Input
+                    id="fullName"
+                    name="fullName"
+                    value={formData.fullName}
+                    onChange={handleInputChange}
+                    className={formErrors.fullName ? "border-red-500" : ""}
+                  />
+                  {formErrors.fullName && <p className="text-red-500 text-sm">{formErrors.fullName}</p>}
                 </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="other" id="other" />
-                  <Label htmlFor="other" className="cursor-pointer">
-                    Other
+
+                <div className="space-y-2">
+                  <Label htmlFor="phoneNumber">
+                    Phone Number <span className="text-red-500">*</span>
                   </Label>
+                  <Input
+                    id="phoneNumber"
+                    name="phoneNumber"
+                    value={formData.phoneNumber}
+                    onChange={handleInputChange}
+                    className={formErrors.phoneNumber ? "border-red-500" : ""}
+                  />
+                  {formErrors.phoneNumber && <p className="text-red-500 text-sm">{formErrors.phoneNumber}</p>}
                 </div>
-              </RadioGroup>
+
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="addressLine1">
+                    Address Line 1 <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="addressLine1"
+                    name="addressLine1"
+                    value={formData.addressLine1}
+                    onChange={handleInputChange}
+                    className={formErrors.addressLine1 ? "border-red-500" : ""}
+                  />
+                  {formErrors.addressLine1 && <p className="text-red-500 text-sm">{formErrors.addressLine1}</p>}
+                </div>
+
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="addressLine2">Address Line 2 (Optional)</Label>
+                  <Input
+                    id="addressLine2"
+                    name="addressLine2"
+                    value={formData.addressLine2}
+                    onChange={handleInputChange}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="city">
+                    City <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="city"
+                    name="city"
+                    value={formData.city}
+                    onChange={handleInputChange}
+                    className={formErrors.city ? "border-red-500" : ""}
+                  />
+                  {formErrors.city && <p className="text-red-500 text-sm">{formErrors.city}</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="state">
+                    State <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="state"
+                    name="state"
+                    value={formData.state}
+                    onChange={handleInputChange}
+                    className={formErrors.state ? "border-red-500" : ""}
+                  />
+                  {formErrors.state && <p className="text-red-500 text-sm">{formErrors.state}</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="pincode">
+                    Pincode <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="pincode"
+                    name="pincode"
+                    value={formData.pincode}
+                    onChange={handleInputChange}
+                    className={formErrors.pincode ? "border-red-500" : ""}
+                  />
+                  {formErrors.pincode && <p className="text-red-500 text-sm">{formErrors.pincode}</p>}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -482,14 +524,6 @@ export default function CheckoutPageClient() {
               <div className="flex justify-between text-base font-medium text-gray-900">
                 <p>Subtotal</p>
                 <p>₹{totalPrice()}</p>
-              </div>
-              <div className="flex justify-between text-sm text-gray-500">
-                <p>Shipping</p>
-                <p>Free</p>
-              </div>
-              <div className="flex justify-between text-sm text-gray-500">
-                <p>Taxes</p>
-                <p>Calculated at checkout</p>
               </div>
             </div>
 
