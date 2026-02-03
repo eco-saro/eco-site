@@ -26,15 +26,43 @@ export default async function OrderPage({ params }: Params) {
         <h2 className="text-lg font-semibold mb-2">Delivery Address</h2>
         <p className="text-sm text-gray-700 leading-relaxed">
           {order.shippingAddress?.street}, {order.shippingAddress?.city},<br />
-          {order.shippingAddress?.state}, {order.shippingAddress?.postalCode}, {order.shippingAddress?.country}
+          {order.shippingAddress?.state}, {order.shippingAddress?.pincode || order.shippingAddress?.postalCode}, {order.shippingAddress?.country}
         </p>
       </div>
+
+      {order.shiprocketAWB && (
+        <div className="border border-emerald-200 bg-emerald-50 rounded-md p-4 mb-6">
+          <h2 className="text-lg font-semibold mb-2 text-emerald-800">Shipping Information</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div>
+              <p className="text-gray-600">Courier Partner</p>
+              <p className="font-medium">{order.shiprocketCourier || "Shiprocket"}</p>
+            </div>
+            <div>
+              <p className="text-gray-600">AWB Number</p>
+              <p className="font-medium">{order.shiprocketAWB}</p>
+            </div>
+            {order.trackingUrl && (
+              <div className="md:col-span-2 mt-2">
+                <a
+                  href={order.trackingUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center text-emerald-600 hover:text-emerald-700 font-medium underline"
+                >
+                  Track Shipment on Shiprocket
+                </a>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="border rounded-md p-4 mb-6">
         <h2 className="text-lg font-semibold mb-4">Items</h2>
         <div className="space-y-4">
-          {order.items.map((item: any) => (
-            <div key={item.productId} className="flex items-center gap-4">
+          {order.products.map((item: any) => (
+            <div key={item.product?.toString() || item.productId} className="flex items-center gap-4">
               <div className="relative h-16 w-16 border bg-muted rounded">
                 <Image
                   src={item.image || "/placeholder.svg"}

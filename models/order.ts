@@ -1,67 +1,62 @@
-import mongoose, { Schema, Document } from "mongoose"
-
-export interface IOrderItem {
-  productId: string
-  name: string
-  price: number
-  quantity: number
-  image?: string
-}
+import { Schema, model, models, Document, Types } from 'mongoose';
 
 export interface IOrder extends Document {
-  userId: string
-  items: IOrderItem[]
-  totalAmount: number
-  status: "Pending" | "Processing" | "Shipped" | "Delivered" | "Cancelled"
+  user: Types.ObjectId;
+  products: {
+    product: Types.ObjectId;
+    vendor: Types.ObjectId;
+    name: string;
+    quantity: number;
+    price: number;
+    image?: string;
+  }[];
+  totalAmount: number;
+  status: 'Pending' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled' | 'completed';
   shippingAddress: {
-    name: string
-    phone: string
-    street: string
-    city: string
-    state: string
-    pincode: string
-    country: string
-  }
-  paymentMethod: "COD" | "Card" | "UPI"
-  createdAt: Date
-  updatedAt: Date
+    name: string;
+    phone: string;
+    street: string;
+    city: string;
+    state: string;
+    pincode: string;
+    country: string;
+  };
+  paymentMethod: 'COD' | 'Card' | 'UPI';
+  shiprocketOrderId?: string;
+  shiprocketShipmentId?: string;
+  shiprocketAWB?: string;
+  shiprocketCourier?: string;
+  trackingUrl?: string;
+  shippingStatus?: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-const OrderItemSchema: Schema<IOrderItem> = new Schema({
-  productId: { type: String, required: true },
-  name: { type: String, required: true },
-  price: { type: Number, required: true },
-  quantity: { type: Number, required: true },
-  image: String,
-})
-
-const OrderSchema: Schema<IOrder> = new Schema(
-  {
-    userId: { type: String, required: true },
-    items: [OrderItemSchema],
-    totalAmount: { type: Number, required: true },
-    status: {
-      type: String,
-      enum: ["Pending", "Processing", "Shipped", "Delivered", "Cancelled"],
-      default: "Pending",
+const OrderSchema = new Schema<IOrder>({
+  user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  products: [
+    {
+      product: { type: Schema.Types.ObjectId, ref: 'Product', required: true },
+      vendor: { type: Schema.Types.ObjectId, ref: 'Vendor', required: true },
+      name: { type: String, required: true },
+      quantity: { type: Number, required: true, min: 1 },
+      price: { type: Number, required: true },
+      image: String,
     },
-    shippingAddress: {
-      name: String,
-      phone: String,
-      street: String,
-      city: String,
-      state: String,
-      pincode: String,
-      country: String,
-    },
-    paymentMethod: {
-      type: String,
-      enum: ["COD", "Card", "UPI"],
-      default: "COD",
-    },
+  ],
+  totalAmount: { type: Number, required: true },
+  status: { type: String, enum: ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'completed'], default: 'Pending' },
+  shippingAddress: {
+    name: String, phone: String, street: String, city: String, state: String, pincode: String, country: String,
   },
-  { timestamps: true }
-)
+  paymentMethod: { type: String, enum: ['COD', 'Card', 'UPI'], default: 'COD' },
+  shiprocketOrderId: String,
+  shiprocketShipmentId: String,
+  shiprocketAWB: String,
+  shiprocketCourier: String,
+  trackingUrl: String,
+  shippingStatus: String,
+}, { timestamps: true });
 
-export const Order =
-  mongoose.models.Order || mongoose.model<IOrder>("Order", OrderSchema)
+// Export the model
+export const Order = models.Order || model<IOrder>('Order', OrderSchema);

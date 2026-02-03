@@ -46,7 +46,7 @@ export default async function OrdersPage() {
               <div className="mb-2">
                 <h3 className="font-medium">Items</h3>
                 <ul className="text-sm text-gray-700 list-disc pl-5">
-                  {order.items?.map((item: any, index: number) => (
+                  {order.products?.map((item: any, index: number) => (
                     <li key={index}>
                       {item.name} x {item.quantity} — ₹{item.price * item.quantity}
                     </li>

@@ -30,10 +30,10 @@ export async function GET(req: Request, { params }: IParams) {
 
     const order = await Order.findOne({
       _id: params.orderId,
-      'items.product': { $in: vendor.products }
+      'products.vendor': vendor._id
     })
       .populate('user', 'name email')
-      .populate('items.product', 'name price images');
+      .populate('products.product', 'name price images');
 
     if (!order) {
       return NextResponse.json({ message: "Order not found or you don't have permission to view it." }, { status: 404 });
@@ -71,7 +71,7 @@ export async function PUT(req: Request, { params }: IParams) {
     }
 
     const updatedOrder = await Order.findOneAndUpdate(
-      { _id: params.orderId, 'items.product': { $in: vendor.products } },
+      { _id: params.orderId, 'products.vendor': vendor._id },
       { status: status },
       { new: true }
     );
