@@ -21,7 +21,7 @@ export default function ProductFilters({
   const subcategories = selectedCategory
     ? productCategories.find((cat) => cat.value === selectedCategory)?.subcategories || []
     : []
-    
+
   // Function to handle category selection
   const handleCategoryChange = (category: string) => {
     if (selectedCategory === category) {
@@ -107,19 +107,19 @@ export default function ProductFilters({
           <AccordionContent className="pt-1 pb-2">
             <div className="space-y-2 pt-1">
               {[
-                { id: 'price-under-500', label: 'Under ₹500', value: '0-500' },
-                { id: 'price-500-1000', label: '₹500 - ₹1,000', value: '500-1000' },
-                { id: 'price-1000-2000', label: '₹1,000 - ₹2,000', value: '1000-2000' },
-                { id: 'price-2000-5000', label: '₹2,000 - ₹5,000', value: '2000-5000' },
-                { id: 'price-over-5000', label: 'Over ₹5,000', value: '5000-' },
+                { id: 'price-under-500', label: 'Under Rs 500', value: '0-500' },
+                { id: 'price-500-1000', label: 'Rs 500 - Rs 1,000', value: '500-1000' },
+                { id: 'price-1000-2000', label: 'Rs 1,000 - Rs 2,000', value: '1000-2000' },
+                { id: 'price-2000-5000', label: 'Rs 2,000 - Rs 5,000', value: '2000-5000' },
+                { id: 'price-over-5000', label: 'Over Rs 5,000', value: '5000-' },
               ].map((price) => (
                 <div key={price.id} className="flex items-center space-x-2 group">
-                  <Checkbox 
-                    id={price.id} 
+                  <Checkbox
+                    id={price.id}
                     className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
                   />
-                  <Label 
-                    htmlFor={price.id} 
+                  <Label
+                    htmlFor={price.id}
                     className="text-xs sm:text-sm font-normal cursor-pointer py-1.5 group-hover:text-primary transition-colors"
                   >
                     {price.label}
@@ -140,7 +140,7 @@ export default function ProductFilters({
                 const id = `rating-${rating}-up`
                 return (
                   <div key={id} className="flex items-center space-x-2 group">
-                    <Checkbox 
+                    <Checkbox
                       id={id}
                       className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
                     />
@@ -173,24 +173,24 @@ export default function ProductFilters({
           <AccordionContent className="pt-1 pb-2">
             <div className="space-y-2 pt-1">
               <div className="flex items-center space-x-2 group">
-                <Checkbox 
-                  id="in-stock" 
+                <Checkbox
+                  id="in-stock"
                   className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
                 />
-                <Label 
-                  htmlFor="in-stock" 
+                <Label
+                  htmlFor="in-stock"
                   className="text-xs sm:text-sm font-normal cursor-pointer py-1.5 group-hover:text-primary transition-colors"
                 >
                   In Stock Only
                 </Label>
               </div>
               <div className="flex items-center space-x-2 group">
-                <Checkbox 
-                  id="on-sale" 
+                <Checkbox
+                  id="on-sale"
                   className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
                 />
-                <Label 
-                  htmlFor="on-sale" 
+                <Label
+                  htmlFor="on-sale"
                   className="text-xs sm:text-sm font-normal cursor-pointer py-1.5 group-hover:text-primary transition-colors"
                 >
                   On Sale

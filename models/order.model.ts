@@ -9,6 +9,10 @@ export interface IOrder extends Document {
     quantity: number;
     price: number;
     image?: string;
+    payoutStatus?: 'PENDING' | 'BLOCKED' | 'COMPLETED' | 'FAILED';
+    payoutBlockReason?: string;
+    razorpayTransferId?: string;
+    refunded?: boolean;
   }[];
   totalAmount: number;
   status: 'Pending' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled' | 'completed';
@@ -28,6 +32,8 @@ export interface IOrder extends Document {
   shiprocketCourier?: string;
   trackingUrl?: string;
   shippingStatus?: string;
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -42,6 +48,13 @@ const OrderSchema = new Schema<IOrder>({
       quantity: { type: Number, required: true, min: 1 },
       price: { type: Number, required: true },
       image: String,
+      payoutStatus: {
+        type: String,
+        enum: ['PENDING', 'BLOCKED', 'COMPLETED', 'FAILED'],
+        default: 'PENDING'
+      },
+      payoutBlockReason: String,
+      razorpayTransferId: String,
     },
   ],
   totalAmount: { type: Number, required: true },
@@ -56,6 +69,8 @@ const OrderSchema = new Schema<IOrder>({
   shiprocketCourier: String,
   trackingUrl: String,
   shippingStatus: String,
+  razorpayOrderId: String,
+  razorpayPaymentId: String,
 }, { timestamps: true });
 
 export const Order = models.Order || model<IOrder>('Order', OrderSchema);

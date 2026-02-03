@@ -68,6 +68,8 @@ export interface IVendor extends Document {
   returnPolicy?: string
   shippingOptions?: IShippingOption[]
   taxInfo?: ITaxInfo
+  razorpayAccountId?: string
+  isBankVerified: boolean
   createdAt: Date
   updatedAt: Date
 }
@@ -136,7 +138,7 @@ const VendorSchema: Schema<IVendor> = new Schema(
       required: [true, "Business email is required"],
       unique: true,
       lowercase: true,
-      match: [/.+\@.+\..+/, 'Please enter a valid email address.'],
+      match: [/.+@.+\..+/, 'Please enter a valid email address.'],
     },
     businessPhone: {
       type: String,
@@ -172,7 +174,9 @@ const VendorSchema: Schema<IVendor> = new Schema(
     taxInfo: {
       type: TaxInfoSchema,
       required: false,
-    }
+    },
+    razorpayAccountId: { type: String },
+    isBankVerified: { type: Boolean, default: false },
   },
   {
     timestamps: true,

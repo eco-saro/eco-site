@@ -8,17 +8,20 @@ import { Button } from '../../../components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface OrderItem {
-  product: {
+  product: string | {
     _id: string;
     name: string;
+    images?: string[];
   };
+  name: string;
   quantity: number;
   price: number;
+  image?: string;
 }
 
 interface Order {
   _id: string;
-  status: 'pending' | 'shipped' | 'delivered' | 'cancelled';
+  status: 'Pending' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled' | 'completed';
   createdAt: string;
   user: {
     name: string;
@@ -89,7 +92,7 @@ export default function OrdersPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Order ID</TableHead>
+              <TableHead>Products</TableHead>
               <TableHead>Date</TableHead>
               <TableHead>Customer</TableHead>
               <TableHead>Status</TableHead>
@@ -100,13 +103,38 @@ export default function OrdersPage() {
             {orders.length > 0 ? (
               orders.map((order) => (
                 <TableRow key={order._id}>
-                  <TableCell className="font-medium">...{order._id.slice(-6)}</TableCell>
-                  <TableCell>{new Date(order.createdAt).toLocaleDateString()}</TableCell>
-                  <TableCell>{order.user.name}</TableCell>
-                  <TableCell>
-                    <Badge variant={order.status === 'delivered' ? 'default' : 'secondary'}>{order.status}</Badge>
+                  <TableCell className="font-medium">
+                    <div className="flex flex-col gap-1">
+                      <span className="truncate max-w-[200px]">
+                        {order.products?.length > 0
+                          ? order.products.map((p: any) => p.name).join(", ")
+                          : `Order #${order._id.slice(-6).toUpperCase()}`}
+                      </span>
+                      <div className="flex -space-x-2 overflow-hidden">
+                        {order.products?.slice(0, 3).map((p, pIdx) => (
+                          <div key={`${order._id}-p-${pIdx}`} className="inline-block h-6 w-6 rounded-full ring-2 ring-white bg-gray-100 overflow-hidden">
+                            <img src={p.image || "/placeholder.svg"} alt="" className="h-full w-full object-cover" />
+                          </div>
+                        ))}
+                        {order.products?.length > 3 && (
+                          <div className="flex items-center justify-center h-6 w-6 rounded-full ring-2 ring-white bg-gray-200 text-[10px] font-bold">
+                            +{order.products.length - 3}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </TableCell>
-                  <TableCell className="text-right">₹{order.totalAmount?.toFixed(2) || "0.00"}</TableCell>
+                  <TableCell>{new Date(order.createdAt).toLocaleDateString()}</TableCell>
+                  <TableCell>{order.user?.name || "Guest"}</TableCell>
+                  <TableCell>
+                    {(() => {
+                      let variant: "default" | "secondary" | "destructive" | "outline" | null = "secondary";
+                      if (order.status === 'Delivered' || order.status === 'completed') variant = "default";
+                      else if (order.status === 'Cancelled') variant = "destructive";
+                      return <Badge variant={variant}>{order.status}</Badge>;
+                    })()}
+                  </TableCell>
+                  <TableCell className="text-right font-bold">₹{order.totalAmount?.toLocaleString() || "0"}</TableCell>
                 </TableRow>
               ))
             ) : (

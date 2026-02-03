@@ -16,24 +16,39 @@ interface IParams {
 export async function GET(req: Request, { params }: IParams) {
   const session = await getServerSession(authOptions);
 
-  if (!session || !session.user || (session.user as any).role !== "vendor") {
+  if (!session || !session.user) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
   await db();
 
   try {
-    const vendor = await Vendor.findOne({ user: session.user.id }).select('products');
-    if (!vendor) {
-      return NextResponse.json({ message: "Vendor profile not found" }, { status: 404 });
+    const userId = (session.user as any).id;
+    const userRole = (session.user as any).role;
+
+    let order;
+
+    if (userRole === "vendor") {
+      const vendor = await Vendor.findOne({ user: userId }).select('products');
+      if (vendor) {
+        order = await Order.findOne({
+          _id: params.orderId,
+          'products.vendor': vendor._id
+        })
+          .populate('user', 'name email')
+          .populate('products.product', 'name price images');
+      }
     }
 
-    const order = await Order.findOne({
-      _id: params.orderId,
-      'products.vendor': vendor._id
-    })
-      .populate('user', 'name email')
-      .populate('products.product', 'name price images');
+    // If not found as vendor order, check if it's the buyer's own order
+    if (!order) {
+      order = await Order.findOne({
+        _id: params.orderId,
+        user: userId
+      })
+        .populate('user', 'name email')
+        .populate('products.product', 'name price images');
+    }
 
     if (!order) {
       return NextResponse.json({ message: "Order not found or you don't have permission to view it." }, { status: 404 });

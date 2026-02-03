@@ -158,7 +158,7 @@ export default function FeaturedProducts() {
                 <CardContent className="pt-6">
                   <div className="text-sm text-emerald-700 mb-1">{product.category}</div>
                   <h3 className="font-medium text-lg text-emerald-900">{product.name}</h3>
-                  <p className="font-semibold mt-2 text-emerald-800">₹{product.price.toFixed(2)}</p>
+                  <p className="font-semibold mt-2 text-emerald-800">Rs {product.price.toFixed(2)}</p>
                 </CardContent>
 
                 <CardFooter className="flex justify-between border-t border-emerald-100 p-4">

@@ -1,8 +1,13 @@
+"use client"
+
 import { Suspense } from "react"
 import CheckoutPageClient from "@/components/checkout/checkout-page"
 import { Skeleton } from "@/components/ui/skeleton"
 
 export default function CheckoutPage() {
+
+  // Removed redirect to profile - users can add address on checkout page
+
   return (
     <Suspense fallback={<CheckoutSkeleton />}>
       <CheckoutPageClient />

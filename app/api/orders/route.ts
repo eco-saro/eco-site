@@ -32,13 +32,17 @@ export async function GET(req: Request) {
 
     let orderFilter: any = {};
 
-    if (userRole === "vendor" && isDashboard) {
+    if (userRole === "admin") {
+      // Admins see everything
+      orderFilter = {};
+    } else if (userRole === "vendor" && isDashboard) {
       const vendor = await Vendor.findOne({ user: userId });
       if (!vendor) {
         return NextResponse.json({ message: "Vendor profile not found" }, { status: 404 });
       }
       orderFilter = { 'products.vendor': vendor._id };
     } else {
+      // Buyers (and vendors in non-dashboard view) see their own purchases
       orderFilter = { user: userId };
     }
 

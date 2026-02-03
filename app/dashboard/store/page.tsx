@@ -432,7 +432,7 @@ export default function StoreSettingsPage() {
                     <div className="w-full sm:w-auto sm:flex-initial">
                       <Label htmlFor={`shipping-price-${index}`} className="text-xs">Price</Label>
                       <div className="relative mt-1">
-                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">$</span>
+                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">Rs</span>
                         <Input
                           id={`shipping-price-${index}`}
                           value={option.price}

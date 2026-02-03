@@ -171,12 +171,9 @@ export default function ProductDetailPage() {
     }
 
     if (!isProfileComplete(user)) {
-      toast({
-        title: "Profile Incomplete",
-        description: "Please complete your profile (name, phone, and address) before making a purchase.",
-        variant: "destructive",
-      })
-      router.push('/profile')
+      // Add to cart first so they can checkout
+      handleAddToCart()
+      router.push('/checkout')
       return
     }
 
@@ -205,9 +202,21 @@ export default function ProductDetailPage() {
         prefill: {
           name: user?.name || '',
           email: user?.email || '',
+          contact: user?.phone || '',
         },
       }, async (response) => {
         // 3. Verify Payment
+        const shippingAddress = user?.addresses?.find((a: any) => a.isDefault) || user?.addresses?.[0]
+
+        if (!shippingAddress) {
+          toast({
+            title: "Address Error",
+            description: "No shipping address found. Please update your profile.",
+            variant: "destructive",
+          })
+          return
+        }
+
         const verifyRes = await fetch('/api/payment/verify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -223,7 +232,15 @@ export default function ProductDetailPage() {
               image: product.images?.[0]
             }],
             totalAmount: product.price,
-            shippingAddress: user?.addresses?.find((a: any) => a.isDefault) || user?.addresses?.[0] || null
+            shippingAddress: {
+              name: shippingAddress.name,
+              phone: shippingAddress.phone,
+              street: shippingAddress.street,
+              city: shippingAddress.city,
+              state: shippingAddress.state,
+              pincode: shippingAddress.pincode,
+              country: shippingAddress.country || "India"
+            }
           }),
         })
 
@@ -234,7 +251,7 @@ export default function ProductDetailPage() {
             title: "Payment Successful",
             description: "Your order has been placed successfully!",
           })
-          router.push('/profile')
+          router.push('/orders')
         } else {
           toast({
             title: "Payment Verification Failed",
@@ -243,11 +260,11 @@ export default function ProductDetailPage() {
           })
         }
       })
-    } catch (error) {
+    } catch (error: any) {
       console.error('Payment error:', error)
       toast({
         title: "Payment Error",
-        description: "Something went wrong. Please try again later.",
+        description: error.message || "Something went wrong. Please try again later.",
         variant: "destructive",
       })
     } finally {
@@ -358,7 +375,7 @@ export default function ProductDetailPage() {
             <div className="sticky bottom-0 bg-white rounded-2xl shadow-lg border border-green-100 p-6 mt-8">
               <div className="flex items-baseline justify-between mb-4">
                 <div>
-                  <p className="text-3xl font-bold text-green-700">${product.price.toFixed(2)}</p>
+                  <p className="text-3xl font-bold text-green-700">Rs {product.price.toFixed(2)}</p>
                   <p className="text-green-600 text-sm">Includes carbon offset</p>
                 </div>
                 <div className="text-right">
@@ -396,7 +413,7 @@ export default function ProductDetailPage() {
               </div>
 
               <p className="text-center text-gray-500 text-sm mt-4">
-                ✓ Free carbon-neutral shipping on orders over $50
+                ✓ Free shipping on all orders
               </p>
             </div>
           </div>

@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useAuth } from '@/components/auth-provider';
+import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,15 +22,10 @@ import {
 } from "@/components/ui/dialog"
 import { Separator } from '@/components/ui/separator';
 
-const BOOKINGS = [
-  { id: 'BK-789', service: 'AC Repair', date: new Date(2023, 7, 5), status: 'Confirmed', duration: '2 hours' },
-  { id: 'BK-012', service: 'Plumbing', date: new Date(2023, 7, 12), status: 'Completed', duration: '1.5 hours' },
-  { id: 'BK-345', service: 'Electrical Wiring', date: new Date(2023, 8, 2), status: 'Scheduled', duration: '3 hours' }
-];
+
 const SIDEBAR_ITEMS = [
   { key: 'overview', label: 'Overview', icon: User },
   { key: 'orders', label: 'My Orders', icon: Package },
-  { key: 'bookings', label: 'My Bookings', icon: Calendar },
   { key: 'settings', label: 'Account Settings', icon: SettingsIcon },
 ];
 
@@ -67,6 +63,7 @@ type Order = {
 export default function ProfilePage() {
 
   const { user, logout, updateUser } = useAuth();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('overview');
   const [isSaving, setIsSaving] = useState(false);
@@ -91,7 +88,6 @@ export default function ProfilePage() {
 
   const [stats, setStats] = useState({
     totalOrders: 0,
-    upcomingBookings: 0,
     loyaltyPoints: 0
   })
 
@@ -214,6 +210,19 @@ export default function ProfilePage() {
     }
     fetchProfileData()
   }, [user?.id])
+
+  // Check for redirect warning
+  useEffect(() => {
+    const warning = searchParams.get('warning')
+    if (warning === 'incomplete') {
+      setActiveTab('settings')
+      toast({
+        title: "Profile Incomplete",
+        description: "Please add your shipping address to proceed with the purchase.",
+        variant: "destructive",
+      })
+    }
+  }, [searchParams, toast])
 
 
   if (isLoading) {
@@ -345,17 +354,7 @@ export default function ProfilePage() {
                     </div>
                   </div>
 
-                  <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
-                    <div className="flex items-center">
-                      <div className="bg-green-50 p-3 rounded-lg">
-                        <Calendar className="text-green-600 w-6 h-6" />
-                      </div>
-                      <div className="ml-4">
-                        <p className="text-sm text-gray-500">Upcoming Bookings</p>
-                        <p className="text-xl font-bold mt-1">{stats.upcomingBookings}</p>
-                      </div>
-                    </div>
-                  </div>
+
 
                   <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
                     <div className="flex items-center">
@@ -374,7 +373,11 @@ export default function ProfilePage() {
                 <div className="bg-white rounded-xl shadow-sm p-6">
                   <div className="flex justify-between items-center mb-6">
                     <h2 className="text-lg font-bold">Recent Orders</h2>
-                    <Button variant="outline" className="text-green-600 border-green-200">
+                    <Button
+                      variant="outline"
+                      className="text-green-600 border-green-200"
+                      onClick={() => setActiveTab('orders')}
+                    >
                       View All Orders
                     </Button>
                   </div>
@@ -386,7 +389,11 @@ export default function ProfilePage() {
                       {orders.slice(0, 2).map(order => (
                         <div key={order._id} className="flex flex-col md:flex-row md:items-center justify-between border-b pb-4">
                           <div>
-                            <p className="font-medium">Order #{order._id.slice(-6).toUpperCase()}</p>
+                            <p className="font-semibold text-gray-900 truncate max-w-[200px]">
+                              {order.products?.length > 0
+                                ? order.products.map((p: any) => p.name).join(", ")
+                                : `Order #${order._id.slice(-6).toUpperCase()}`}
+                            </p>
                             <p className="text-sm text-gray-500 mt-1">
                               {format(new Date(order.createdAt), 'dd MMM yyyy')} • {order.products?.length || 0} item{(order.products?.length || 0) > 1 ? 's' : ''}
                             </p>
@@ -418,41 +425,7 @@ export default function ProfilePage() {
                 </div>
 
 
-                {/* Recent Bookings */}
-                <div className="bg-white rounded-xl shadow-sm p-6">
-                  <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-lg font-bold">Upcoming Bookings</h2>
-                    <Button variant="outline" className="text-green-600 border-green-200">
-                      View All Bookings
-                    </Button>
-                  </div>
 
-                  <div className="space-y-4">
-                    {BOOKINGS.filter(b => b.status === 'Scheduled' || b.status === 'Confirmed').map(booking => (
-                      <div key={booking.id} className="flex flex-col md:flex-row md:items-center justify-between border-b pb-4">
-                        <div>
-                          <p className="font-medium">{booking.service}</p>
-                          <p className="text-sm text-gray-500 mt-1">
-                            {format(booking.date, 'EEE, d MMM yyyy, h:mm a')} • {booking.duration}
-                          </p>
-                        </div>
-                        <div className="flex items-center mt-2 md:mt-0">
-                          <div className="mr-4">
-                            <p className={`text-xs ${booking.status === 'Confirmed' ? 'text-green-600' :
-                              booking.status === 'Completed' ? 'text-gray-600' :
-                                booking.status === 'Scheduled' ? 'text-blue-600' : 'text-gray-600'
-                              }`}>
-                              {booking.status}
-                            </p>
-                          </div>
-                          <Button variant="outline" size="sm">
-                            View Details
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
               </div>
             )}
 
@@ -479,7 +452,11 @@ export default function ProfilePage() {
                       <div key={order._id} className="border rounded-lg p-4 hover:border-green-300 transition-colors">
                         <div className="flex justify-between items-center">
                           <div>
-                            <p className="font-medium">Order #{order._id.slice(-6).toUpperCase()}</p>
+                            <p className="font-semibold text-gray-900">
+                              {order.products?.length > 0
+                                ? order.products.map((p: any) => p.name).join(", ")
+                                : `Order #${order._id.slice(-6).toUpperCase()}`}
+                            </p>
                             <p className="text-sm text-gray-500">
                               {format(new Date(order.createdAt), 'dd MMM yyyy')} • {order.products?.length || 0} item{(order.products?.length || 0) > 1 ? 's' : ''}
                             </p>
