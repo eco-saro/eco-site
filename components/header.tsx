@@ -50,6 +50,7 @@ export default function Header() {
   const user = session?.user as { name?: string | null; email?: string | null; image?: string | null; role?: string; avatar?: string | null } | undefined
   const isAuthenticated = status === "authenticated"
   const isVendor = user?.role === "vendor" || false
+  const isAdmin = user?.role === "admin" || false
   const cart = useCart()
   const cartItems = cart?.cart || []
   const cartItemCount = cartItems.length || 0
@@ -134,7 +135,20 @@ export default function Header() {
                     onClick={() => setIsMenuOpen(false)}
                   >
                     <LayoutDashboard className="mr-3 h-4 w-4" />
-                    Dashboard
+                    Vendor Dashboard
+                  </Link>
+                )}
+                {isAdmin && (
+                  <Link
+                    href="/admin"
+                    className={`flex items-center px-4 py-3 text-sm font-medium hover:bg-gray-50 ${pathname === "/admin"
+                      ? "text-primary bg-gray-50"
+                      : "text-gray-700"
+                      }`}
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <LayoutDashboard className="mr-3 h-4 w-4" />
+                    Admin Dashboard
                   </Link>
                 )}
               </nav>
@@ -292,6 +306,11 @@ export default function Header() {
                 {isVendor && (
                   <Link href="/vendor/dashboard">
                     <DropdownMenuItem>Vendor Dashboard</DropdownMenuItem>
+                  </Link>
+                )}
+                {isAdmin && (
+                  <Link href="/admin">
+                    <DropdownMenuItem className="text-emerald-600 font-bold">Admin Dashboard</DropdownMenuItem>
                   </Link>
                 )}
                 <DropdownMenuSeparator />

@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import db from "../../../../lib/mongodb";
 import { Order } from "../../../../models/order.model";
 import { Vendor } from "../../../../models/vendor";
+import { Product } from "../../../../models/product.model";
 
 interface IParams {
   params: { orderId: string };
@@ -16,7 +17,7 @@ interface IParams {
 export async function GET(req: Request, { params }: IParams) {
   const session = await getServerSession(authOptions);
 
-  if (!session || !session.user) {
+  if (!session?.user) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
@@ -85,15 +86,23 @@ export async function PUT(req: Request, { params }: IParams) {
       return NextResponse.json({ message: "Vendor profile not found" }, { status: 404 });
     }
 
-    const updatedOrder = await Order.findOneAndUpdate(
-      { _id: params.orderId, 'products.vendor': vendor._id },
+    const existingOrder = await Order.findOne({ _id: params.orderId, 'products.vendor': vendor._id });
+    if (!existingOrder) {
+      return NextResponse.json({ message: "Order not found or you don't have permission to update it." }, { status: 404 });
+    }
+
+    // Restock if transitioning to Cancelled
+    if (status === "Cancelled" && existingOrder.status !== "Cancelled") {
+      for (const item of existingOrder.products) {
+        await Product.findByIdAndUpdate(item.product, { $inc: { stock: item.quantity } });
+      }
+    }
+
+    const updatedOrder = await Order.findByIdAndUpdate(
+      params.orderId,
       { status: status },
       { new: true }
     );
-
-    if (!updatedOrder) {
-      return NextResponse.json({ message: "Order not found or you don't have permission to update it." }, { status: 404 });
-    }
 
     return NextResponse.json(updatedOrder);
   } catch (error) {
