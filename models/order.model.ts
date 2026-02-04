@@ -13,6 +13,11 @@ export interface IOrder extends Document {
     payoutBlockReason?: string;
     razorpayTransferId?: string;
     refunded?: boolean;
+    commissionAmount?: number;
+    netAmount?: number;
+    payoutDate?: Date;
+    payoutReference?: string;
+    isLocked?: boolean;
   }[];
   totalAmount: number;
   status: 'Pending' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled' | 'completed';
@@ -55,6 +60,11 @@ const OrderSchema = new Schema<IOrder>({
       },
       payoutBlockReason: String,
       razorpayTransferId: String,
+      commissionAmount: { type: Number, default: 0 },
+      netAmount: { type: Number, default: 0 },
+      payoutDate: Date,
+      payoutReference: String,
+      isLocked: { type: Boolean, default: false },
     },
   ],
   totalAmount: { type: Number, required: true },

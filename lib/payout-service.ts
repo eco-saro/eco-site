@@ -3,16 +3,28 @@ import db from "./mongodb";
 import { Order } from "../models/order.model";
 import { Vendor } from "../models/vendor";
 import { Payout } from "../models/payout.model";
+import { Settings } from "../models/settings.model";
 
 const razorpay = new Razorpay({
     key_id: process.env.RAZORPAY_KEY_ID!,
     key_secret: process.env.RAZORPAY_KEY_SECRET!,
 });
 
-const COMMISSION_PERCENTAGE = 10; // 10% Platform Fee
+const COMMISSION_PERCENTAGE_DEFAULT = 10; // Default 10% Platform Fee
 const RETURN_WINDOW_DAYS = 7; // Payout after 7 days of delivery
 
 export class PayoutService {
+    /**
+     * Gets the current platform commission rate
+     */
+    private static async getCommissionRate() {
+        try {
+            const settings = await Settings.findOne();
+            return settings?.commissionRate ?? COMMISSION_PERCENTAGE_DEFAULT;
+        } catch (error) {
+            return COMMISSION_PERCENTAGE_DEFAULT;
+        }
+    }
     /**
      * Main entry point to process payouts for an order.
      * Usually called via Cron or Order Status Update.
@@ -77,8 +89,9 @@ export class PayoutService {
 
         try {
             // Calculate Amounts
+            const commissionRate = await this.getCommissionRate();
             const itemTotal = product.price * product.quantity;
-            const platformFee = Math.round(itemTotal * (COMMISSION_PERCENTAGE / 100));
+            const platformFee = Math.round(itemTotal * (commissionRate / 100));
             const vendorAmount = itemTotal - platformFee;
 
             console.log(`[Payout] 💸 Initiating transfer for Order ${order._id}, Item ${product.name}`);

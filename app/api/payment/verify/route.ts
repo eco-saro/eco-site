@@ -3,6 +3,7 @@ import crypto from "node:crypto"
 import db from "@/lib/mongodb"
 import { Order } from "@/models/order.model"
 import { Product } from "@/models/product.model"
+import { Settings } from "@/models/settings.model"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
 import { shiprocket } from "@/lib/shiprocket"
@@ -42,19 +43,48 @@ export async function POST(req: NextRequest) {
         // 2. Create Order in Database
         await db()
 
-        // Map items to include vendor info if not present
-        // Frontend should ideally send vendor info, but if not, we fetch it
-        const processedItems = await Promise.all(items.map(async (item: any) => {
-            if (item.vendor) return item;
+        // 2.1 Get Commission Rate
+        const settings = await Settings.findOne();
+        const commissionRate = settings?.commissionRate ?? 10;
 
-            const product = await Product.findById(item.id || item.productId);
+        // 2a. Initial Stock Validation
+        for (const item of items) {
+            const id = item.id || item.productId;
+            const product = await Product.findById(id);
+            if (!product) {
+                return NextResponse.json({ message: `Product ${item.name} not found` }, { status: 404 });
+            }
+            if (product.stock < item.quantity) {
+                return NextResponse.json({ message: `Insufficient stock for ${product.name}` }, { status: 400 });
+            }
+        }
+
+        // 2b. Process Items and Decrement Stock
+        const processedItems = await Promise.all(items.map(async (item: any) => {
+            const id = item.id || item.productId;
+            const product = await Product.findByIdAndUpdate(
+                id,
+                { $inc: { stock: -item.quantity } },
+                { new: true }
+            );
+
+            const price = item.price;
+            const quantity = item.quantity;
+            const itemTotal = price * quantity;
+            const commissionAmount = Math.round(itemTotal * (commissionRate / 100));
+            const netAmount = itemTotal - commissionAmount;
+
             return {
-                product: item.id || item.productId,
-                vendor: product?.vendor,
+                product: id,
+                vendor: product?.vendor || item.vendor,
                 name: item.name,
-                quantity: item.quantity,
-                price: item.price,
-                image: item.image
+                quantity,
+                price,
+                image: item.image,
+                commissionAmount,
+                netAmount,
+                payoutStatus: 'PENDING',
+                isLocked: false
             }
         }));
 

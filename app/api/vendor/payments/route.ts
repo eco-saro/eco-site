@@ -45,8 +45,8 @@ export async function GET(req: Request) {
 
             for (const product of vendorProducts) {
                 const itemTotal = product.price * product.quantity;
-                const platformFee = Math.round(itemTotal * 0.1); // Assuming 10%
-                const vendorShare = itemTotal - platformFee;
+                const platformFee = product.commissionAmount || Math.round(itemTotal * 0.1);
+                const vendorShare = product.netAmount || (itemTotal - platformFee);
 
                 if (product.payoutStatus === "COMPLETED") {
                     totalEarnings += vendorShare;
