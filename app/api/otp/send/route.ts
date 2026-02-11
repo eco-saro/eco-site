@@ -13,21 +13,19 @@ export async function POST(req: Request) {
             return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
         }
 
-        // Generate 6-digit OTP
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        // Generate 6-digit OTP using crypto for security
+        const crypto = await import("crypto");
+        const otp = crypto.randomInt(100000, 999999).toString();
         const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-        // Save to User
+        // Save to User and reset attempts
         await User.findOneAndUpdate(
             { email: session.user.email },
-            { otp, otpExpires }
+            { otp, otpExpires, otpAttempts: 0 }
         );
 
-        // Always log to console for debugging/backup
-        console.log("============================================");
-        console.log(`[OTP SERVICE] OTP for User: ${session.user.email}`);
-        console.log(`[OTP SERVICE] CODE: ${otp}`);
-        console.log("============================================");
+        // Masked log for security
+        console.log(`[OTP SERVICE] OTP generated for ${session.user.email.substring(0, 3)}***`);
 
         let emailSent = false;
 

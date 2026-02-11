@@ -29,17 +29,20 @@ export async function GET(req: NextRequest) {
         }
 
         if (search) {
+            // Sanitize search term to prevent ReDoS
+            const sanitizedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
             // Search by Order ID or User Name/Email if possible
             // For now, let's support Order ID and search for users
             const users = await User.find({
                 $or: [
-                    { name: { $regex: search, $options: "i" } },
-                    { email: { $regex: search, $options: "i" } }
+                    { name: { $regex: sanitizedSearch, $options: "i" } },
+                    { email: { $regex: sanitizedSearch, $options: "i" } }
                 ]
             }).select("_id");
 
             const vendorSearchQuery = await Vendor.find({
-                businessName: { $regex: search, $options: "i" }
+                businessName: { $regex: sanitizedSearch, $options: "i" }
             }).select("_id");
 
             query.$or = [

@@ -17,7 +17,9 @@ export async function GET(req: Request) {
     let query: any = {};
 
     if (search) {
-      const searchRegex = new RegExp(search, "i");
+      // Security: Escape regex special characters to prevent ReDoS
+      const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const searchRegex = new RegExp(escapedSearch, "i");
       query.$or = [
         { name: { $regex: searchRegex } },
         { description: { $regex: searchRegex } },

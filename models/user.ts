@@ -38,6 +38,7 @@ export interface IUser extends Document {
   bio?: string
   otp?: string
   otpExpires?: Date
+  otpAttempts?: number
   createdAt: Date
   updatedAt: Date
 }
@@ -113,9 +114,16 @@ const UserSchema: Schema<IUser> = new Schema(
     },
     otp: {
       type: String,
+      select: false,
     },
     otpExpires: {
       type: Date,
+      select: false,
+    },
+    otpAttempts: {
+      type: Number,
+      default: 0,
+      select: false,
     },
   },
   {

@@ -10,42 +10,16 @@ export async function POST(req: Request) {
     try {
         await connectToDatabase();
 
-        const cloudinaryKeys = Object.keys(process.env).filter(key => key.toUpperCase().includes('CLOUDINARY'));
-        console.log("Available Cloudinary Keys:", cloudinaryKeys);
-
         const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
         const apiKey = process.env.CLOUDINARY_API_KEY;
         const apiSecret = process.env.CLOUDINARY_API_SECRET;
 
         if (!cloudName || !apiKey || !apiSecret) {
-            const missing = [];
-            if (!cloudName) missing.push("CLOUDINARY_CLOUD_NAME");
-            if (!apiKey) missing.push("CLOUDINARY_API_KEY");
-            if (!apiSecret) missing.push("CLOUDINARY_API_SECRET");
-
-            console.error("Missing Cloudinary Env Vars:", missing);
             return NextResponse.json(
                 { message: "Server Configuration Error" },
                 { status: 500 }
             );
         }
-
-        // Debugging: Log partial values to check for issues like quotes
-        console.log("Cloudinary Config Debug:", {
-            cloudName: {
-                length: cloudName.length,
-                value: `${cloudName.substring(0, 3)}...${cloudName.substring(cloudName.length - 3)}`
-            },
-            apiKey: {
-                length: apiKey.length,
-                value: `${apiKey.substring(0, 3)}...${apiKey.substring(apiKey.length - 3)}`
-            },
-            apiSecret: {
-                length: apiSecret.length,
-                // Be careful not to log too much of the secret
-                value: `${apiSecret.substring(0, 3)}...${apiSecret.substring(apiSecret.length - 3)}`
-            }
-        });
 
         // Check for common mistake: quotes in env vars
         if (cloudName.startsWith('"') || cloudName.startsWith("'") ||
@@ -67,11 +41,10 @@ export async function POST(req: Request) {
             );
         }
 
-        // Configure Cloudinary
         cloudinary.config({
-            cloud_name: cloudName.replace(/['"]/g, ''), // Strip quotes just in case
-            api_key: apiKey.replace(/['"]/g, ''),
-            api_secret: apiSecret.replace(/['"]/g, ''),
+            cloud_name: cloudName.replaceAll(/['"]/g, ''), // Strip quotes just in case
+            api_key: apiKey.replaceAll(/['"]/g, ''),
+            api_secret: apiSecret.replaceAll(/['"]/g, ''),
         });
 
         // 1. Authentication Check
@@ -100,6 +73,12 @@ export async function POST(req: Request) {
             return NextResponse.json({ message: "File too large (max 5MB)" }, { status: 400 });
         }
 
+        // MIME type validation
+        const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+        if (!allowedTypes.includes(file.type)) {
+            return NextResponse.json({ message: "Invalid file type. Only JPG, PNG, and WEBP images are allowed." }, { status: 400 });
+        }
+
         // 3. Convert File to Buffer
         const arrayBuffer = await file.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
@@ -126,7 +105,7 @@ export async function POST(req: Request) {
     } catch (error) {
         console.error("Upload error:", error);
         return NextResponse.json(
-            { message: error instanceof Error ? error.message : "Internal Server Error", error },
+            { message: "Internal Server Error" },
             { status: 500 }
         );
     }

@@ -38,6 +38,12 @@ export async function GET(req: Request, { params }: IParams) {
         })
           .populate('user', 'name email')
           .populate('products.product', 'name price images');
+
+        if (order) {
+          // Security: Filter products to only show those belonging to this vendor
+          order = order.toObject();
+          order.products = order.products.filter((p: any) => p.vendor.toString() === vendor._id.toString());
+        }
       }
     }
 
@@ -97,6 +103,10 @@ export async function PUT(req: Request, { params }: IParams) {
         await Product.findByIdAndUpdate(item.product, { $inc: { stock: item.quantity } });
       }
     }
+
+    // Security: Only update global status if authorized (already checked by findOne above)
+    // In a multi-vendor system, you might want to update status PER PRODUCT.
+    // For now, we ensure the vendor owns products in this order.
 
     const updatedOrder = await Order.findByIdAndUpdate(
       params.orderId,

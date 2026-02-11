@@ -29,6 +29,16 @@ export async function POST(
             )
         }
 
+        // Sanitization and length limits
+        const sanitizedContent = content.replaceAll(/<[^>]*>?/gm, '').trim().substring(0, 1000);
+
+        if (!sanitizedContent) {
+            return NextResponse.json(
+                { error: "Comment contains invalid characters or is too short" },
+                { status: 400 }
+            )
+        }
+
         const userId = session.user.id
 
         // Find user by email to get ObjectId if session.user.id is not available (fallback)
@@ -48,7 +58,7 @@ export async function POST(
         }
 
         const newComment = {
-            content,
+            content: sanitizedContent,
             author: userObjectId,
             parentId: parentId || undefined,
             likes: [],

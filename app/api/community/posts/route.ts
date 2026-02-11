@@ -87,7 +87,7 @@ export async function GET(req: NextRequest) {
     } catch (error) {
         console.error("Error fetching posts:", error)
         return NextResponse.json(
-            { error: `Failed to fetch posts: ${error instanceof Error ? error.message : String(error)}` },
+            { error: "Failed to fetch posts" },
             { status: 500 }
         )
     }
@@ -113,6 +113,19 @@ export async function POST(req: NextRequest) {
             )
         }
 
+        // Basic sanitization and length limits
+        const sanitize = (text: string) => text.replaceAll(/<[^>]*>?/gm, '').trim();
+
+        const sanitizedTitle = sanitize(title).substring(0, 200);
+        const sanitizedContent = sanitize(content).substring(0, 5000);
+
+        if (!sanitizedTitle || !sanitizedContent) {
+            return NextResponse.json(
+                { error: "Post contains invalid characters or is too short after sanitization" },
+                { status: 400 }
+            )
+        }
+
         // Find user by email to get ObjectId
         const user = await User.findOne({ email: session.user.email })
         if (!user) {
@@ -120,8 +133,8 @@ export async function POST(req: NextRequest) {
         }
 
         const newPost = await Post.create({
-            title,
-            content,
+            title: sanitizedTitle,
+            content: sanitizedContent,
             type: type || "discussion",
             image,
             author: user._id,

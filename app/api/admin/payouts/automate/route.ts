@@ -9,10 +9,19 @@ import { PayoutService } from "@/lib/payout-service";
  * Ensure to protect this with a secret or admin session
  */
 export async function GET(req: NextRequest) {
-    // Use a simple CRON_SECRET for security if no session is present (for Vercel Cron)
+    // Use a strict CRON_SECRET for automated triggers, or check for admin session
     const authHeader = req.headers.get('authorization');
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}` && process.env.NODE_ENV === 'production') {
-        return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    const isSecretValid = authHeader === `Bearer ${process.env.CRON_SECRET}`;
+
+    if (!isSecretValid) {
+        // Fallback: Check if it's an admin user manually triggering
+        const { getServerSession } = await import("next-auth/next");
+        const { authOptions } = await import("@/lib/auth");
+        const session = await getServerSession(authOptions);
+
+        if (!session || (session.user as any).role !== "admin") {
+            return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+        }
     }
 
     await db();
