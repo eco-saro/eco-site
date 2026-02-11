@@ -167,7 +167,11 @@ export async function PUT(req: Request) {
       return NextResponse.json({ message: "Product not found or unauthorized" }, { status: 404 });
     }
 
-    const updatedProduct = await Product.findByIdAndUpdate(_id, updateData, { new: true });
+    // Whitelist fields to prevent mass assignment (e.g., changing vendor ID)
+    const { name, description, price, category, stock, images } = updateData;
+    const sanitizedUpdate = { name, description, price, category, stock, images };
+
+    const updatedProduct = await Product.findByIdAndUpdate(_id, sanitizedUpdate, { new: true });
 
     return NextResponse.json(updatedProduct);
   } catch (error) {

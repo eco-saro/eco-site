@@ -35,11 +35,25 @@ export async function PATCH(req: NextRequest) {
         await db();
         const body = await req.json();
 
+        // Whitelist allowed fields to prevent mass assignment
+        const allowedFields = ["commissionRate", "supportEmail", "supportPhone", "lowStockThreshold"];
+        const updateData: any = {};
+
+        allowedFields.forEach(field => {
+            if (body[field] !== undefined) {
+                updateData[field] = body[field];
+            }
+        });
+
+        if (Object.keys(updateData).length === 0) {
+            return NextResponse.json({ message: "No valid fields provided" }, { status: 400 });
+        }
+
         let settings = await Settings.findOne();
         if (settings) {
-            Object.assign(settings, body);
+            Object.assign(settings, updateData);
         } else {
-            settings = new Settings(body);
+            settings = new Settings(updateData);
         }
 
         await settings.save();

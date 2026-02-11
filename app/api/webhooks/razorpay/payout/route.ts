@@ -4,9 +4,13 @@ import db from "@/lib/mongodb";
 import { Payout } from "@/models/payout.model";
 import { Order } from "@/models/order.model";
 
-const WEBHOOK_SECRET = process.env.RAZORPAY_WEBHOOK_SECRET!;
+const WEBHOOK_SECRET = process.env.RAZORPAY_WEBHOOK_SECRET;
 
 export async function POST(req: NextRequest) {
+    if (!WEBHOOK_SECRET) {
+        console.error("[Razorpay Webhook] ❌ RAZORPAY_WEBHOOK_SECRET is not configured.");
+        return NextResponse.json({ message: "Webhook secret not configured" }, { status: 500 });
+    }
     const body = await req.text();
     const signature = req.headers.get("x-razorpay-signature");
 

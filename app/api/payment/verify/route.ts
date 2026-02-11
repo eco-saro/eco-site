@@ -20,7 +20,6 @@ export async function POST(req: NextRequest) {
             razorpay_payment_id,
             razorpay_signature,
             items,
-            totalAmount,
             shippingAddress
         } = await req.json()
 
@@ -47,7 +46,10 @@ export async function POST(req: NextRequest) {
         const settings = await Settings.findOne();
         const commissionRate = settings?.commissionRate ?? 10;
 
-        // 2a. Initial Stock Validation
+        // 2a. Initial Stock Validation & Price Calculation
+        let calculatedTotalAmount = 0;
+        const productsData = [];
+
         for (const item of items) {
             const id = item.id || item.productId;
             const product = await Product.findById(id);
@@ -57,30 +59,41 @@ export async function POST(req: NextRequest) {
             if (product.stock < item.quantity) {
                 return NextResponse.json({ message: `Insufficient stock for ${product.name}` }, { status: 400 });
             }
+
+            calculatedTotalAmount += product.price * item.quantity;
+            productsData.push({
+                product: id,
+                vendor: product.vendor,
+                name: product.name,
+                price: product.price, // Use DB price
+                quantity: item.quantity,
+                image: product.images[0] || item.image
+            });
         }
 
-        // 2b. Process Items and Decrement Stock
-        const processedItems = await Promise.all(items.map(async (item: any) => {
-            const id = item.id || item.productId;
-            const product = await Product.findByIdAndUpdate(
-                id,
-                { $inc: { stock: -item.quantity } },
+        // 2b. Process Items and Atomic Stock Decrement
+        const processedItems = await Promise.all(productsData.map(async (data: any) => {
+            const updatedProduct = await Product.findOneAndUpdate(
+                { _id: data.product, stock: { $gte: data.quantity } },
+                { $inc: { stock: -data.quantity } },
                 { new: true }
             );
 
-            const price = item.price;
-            const quantity = item.quantity;
-            const itemTotal = price * quantity;
+            if (!updatedProduct) {
+                throw new Error(`Insufficient stock for ${data.name} (concurrent purchase)`);
+            }
+
+            const itemTotal = data.price * data.quantity;
             const commissionAmount = Math.round(itemTotal * (commissionRate / 100));
             const netAmount = itemTotal - commissionAmount;
 
             return {
-                product: id,
-                vendor: product?.vendor || item.vendor,
-                name: item.name,
-                quantity,
-                price,
-                image: item.image,
+                product: data.product,
+                vendor: data.vendor,
+                name: data.name,
+                quantity: data.quantity,
+                price: data.price,
+                image: data.image,
                 commissionAmount,
                 netAmount,
                 payoutStatus: 'PENDING',
@@ -91,7 +104,7 @@ export async function POST(req: NextRequest) {
         const newOrder = await Order.create({
             user: (session.user as any).id,
             products: processedItems,
-            totalAmount,
+            totalAmount: calculatedTotalAmount, // Use calculated total
             status: 'completed',
             paymentMethod: 'Card',
             razorpayOrderId: razorpay_order_id,
@@ -131,7 +144,7 @@ export async function POST(req: NextRequest) {
                     selling_price: item.price
                 })),
                 payment_method: "Prepaid",
-                sub_total: totalAmount,
+                sub_total: calculatedTotalAmount,
                 length: 10,
                 breadth: 10,
                 height: 10,

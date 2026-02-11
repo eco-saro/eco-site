@@ -11,11 +11,19 @@ export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
 
-        // Shiprocket sends a signature in the header to verify the request
-        // You should configure a webhook secret in Shiprocket dashboard
-        const signature = req.headers.get("x-api-key");
-        // Note: Shiprocket webhook verification varies, sometimes it's a simple API key
-        // For production, you should implement robust verification.
+        // Security: Verify Shiprocket API Key/Secret
+        const apiKey = req.headers.get("x-api-key");
+        const webhookSecret = process.env.SHIPROCKET_WEBHOOK_SECRET;
+
+        if (!webhookSecret) {
+            console.error("[Shiprocket Webhook] ❌ SHIPROCKET_WEBHOOK_SECRET is not configured.");
+            return NextResponse.json({ message: "Webhook secret not configured" }, { status: 500 });
+        }
+
+        if (apiKey !== webhookSecret) {
+            console.warn("[Shiprocket Webhook] ❌ Invalid x-api-key received.");
+            return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+        }
 
         await db();
 

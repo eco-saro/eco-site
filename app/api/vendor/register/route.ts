@@ -31,10 +31,11 @@ export async function POST(req: Request) {
       }
     }
 
-    if (!body.otpVerified) {
+    const user = await User.findById(session.user.id);
+    if (!user || !user.isEmailVerified) {
       return NextResponse.json(
-        { message: "OTP must be verified" },
-        { status: 400 }
+        { message: "Email verification required. Please verify your email via OTP first." },
+        { status: 403 }
       );
     }
 

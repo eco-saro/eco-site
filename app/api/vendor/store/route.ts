@@ -46,8 +46,33 @@ export async function POST(req: Request) {
 
     const body = await req.json();
 
-    // Update vendor document with the new data
-    await Vendor.updateOne({ _id: vendor._id }, { $set: body });
+    // Whitelist allowed fields to prevent mass assignment
+    const allowedFields = [
+      "businessName",
+      "businessEmail",
+      "businessPhone",
+      "businessAddress",
+      "description",
+      "payoutDetails",
+      "openingHours",
+      "returnPolicy",
+      "shippingOptions",
+      "taxInfo"
+    ];
+
+    const updateData: any = {};
+    allowedFields.forEach(field => {
+      if (body[field] !== undefined) {
+        updateData[field] = body[field];
+      }
+    });
+
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json({ message: "No valid fields provided for update." }, { status: 400 });
+    }
+
+    // Update vendor document with the filtered data
+    await Vendor.updateOne({ _id: vendor._id }, { $set: updateData });
 
     return NextResponse.json({ message: "Store settings updated successfully." }, { status: 200 });
 
