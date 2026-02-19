@@ -147,7 +147,7 @@ export default function Hero() {
         <div className="relative z-30 flex flex-col items-end gap-16 lg:absolute lg:right-0 lg:bottom-10 lg:w-64">
           {/* Mission Statement */}
           <motion.div
-            className="text-right max-w-[220px]"
+            className="pr-20 text-right max-w-[300px]"
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 1.6 }}

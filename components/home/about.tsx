@@ -16,7 +16,7 @@ export default function About() {
                     viewport={{ once: true }}
                     className="mb-20 text-left"
                 >
-                    <h2 className="text-[60px] md:text-[80px] font-bold tracking-tighter text-[#86A789] leading-none mb-4 -rotate-2 origin-left inline-block">
+                    <h2 className="text-[60px] md:text-[80px] font-bold tracking-tighter text-[#86A789] leading-none mb-4 inline-block">
                         Our EcoSaro Story
                     </h2>
                     <div className="flex flex-col gap-1 mt-6">
