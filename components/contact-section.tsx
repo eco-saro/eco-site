@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Mail, Phone, MapPin, Instagram, Twitter, Facebook } from "lucide-react"
+import { Mail, Phone, MapPin, Instagram, Twitter, Facebook, Linkedin } from "lucide-react"
 
 export default function ContactSection() {
   return (
@@ -22,7 +22,7 @@ export default function ContactSection() {
               <Mail className="h-6 w-6 text-green-600 mt-1" />
               <div>
                 <h3 className="font-bold">Email Us</h3>
-                <p className="text-gray-500">contact@soiltosoul.com</p>
+                <p className="text-gray-500">Support@ecosaro.com</p>
               </div>
             </div>
 
@@ -43,6 +43,12 @@ export default function ContactSection() {
             </div>
 
             <div className="flex items-center space-x-4 mt-8">
+              <Button asChild variant="outline" size="icon" className="rounded-full">
+                <a href="https://www.linkedin.com/company/ecosaro-a-unit-of-watonezz-llp/" target="_blank" rel="noopener noreferrer">
+                  <Linkedin className="h-5 w-5" />
+                  <span className="sr-only">LinkedIn</span>
+                </a>
+              </Button>
               <Button variant="outline" size="icon" className="rounded-full">
                 <Instagram className="h-5 w-5" />
                 <span className="sr-only">Instagram</span>

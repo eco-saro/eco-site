@@ -1,6 +1,6 @@
 import Link from "next/link"
 import Image from "next/image"
-import { Facebook, Instagram, Twitter } from "lucide-react"
+import { Facebook, Instagram, Twitter, Linkedin, Mail } from "lucide-react"
 
 const footerLinks = {
   shop: [
@@ -24,7 +24,7 @@ export default function Footer() {
   return (
     <footer className="bg-green-50 border-t">
       <div className="container py-12 md:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 text-center md:text-left">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 text-center md:text-left">
           <div className="lg:col-span-1">
             <Link href="/" className="inline-block">
               <Image
@@ -39,7 +39,7 @@ export default function Footer() {
               Your one-stop destination for eco-friendly products, services, and knowledge. Save nature, grow nature,
               and create impact.
             </p>
-            <div className="mt-6 flex space-x-4">
+            <div className="mt-6 flex justify-center md:justify-start space-x-4">
               <a href="#" className="text-gray-500 hover:text-primary">
                 <Facebook className="h-5 w-5" />
                 <span className="sr-only">Facebook</span>
@@ -47,6 +47,10 @@ export default function Footer() {
               <a href="#" className="text-gray-500 hover:text-primary">
                 <Instagram className="h-5 w-5" />
                 <span className="sr-only">Instagram</span>
+              </a>
+              <a href="https://www.linkedin.com/company/ecosaro-a-unit-of-watonezz-llp/" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-primary">
+                <Linkedin className="h-5 w-5" />
+                <span className="sr-only">LinkedIn</span>
               </a>
               <a href="#" className="text-gray-500 hover:text-primary">
                 <Twitter className="h-5 w-5" />
@@ -68,8 +72,6 @@ export default function Footer() {
             </ul>
           </div>
 
-
-
           <div>
             <h3 className="text-sm font-medium text-foreground">Eco Library</h3>
             <ul className="mt-4 space-y-2">
@@ -80,6 +82,18 @@ export default function Footer() {
                   </Link>
                 </li>
               ))}
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-medium text-foreground">Contact Us</h3>
+            <ul className="mt-4 space-y-2">
+              <li className="flex items-center justify-center md:justify-start gap-2 text-sm text-muted-foreground">
+                <Mail className="h-4 w-4" />
+                <a href="mailto:Support@ecosaro.com" className="hover:text-primary text-sm">
+                  Support@ecosaro.com
+                </a>
+              </li>
             </ul>
           </div>
 

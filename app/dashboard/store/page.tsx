@@ -30,7 +30,7 @@ export default function StoreSettingsPage() {
     name: "EcoFriendly Goods",
     logo: "/store-logo.png",
     description: "We specialize in eco-friendly, sustainable products that help reduce environmental impact while maintaining high quality and functionality.",
-    contactEmail: "contact@ecofriendlygoods.com",
+    contactEmail: "Support@ecosaro.com",
     contactPhone: "+1 555-123-4567",
     openingHours: {
       monday: { open: "09:00", close: "18:00", closed: false },
