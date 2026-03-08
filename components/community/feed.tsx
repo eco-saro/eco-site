@@ -8,7 +8,7 @@ import { Card, CardContent } from "../ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
 import { Badge } from "../ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs"
-import { Heart, MessageSquare, Share2, Calendar, MapPin, Clock, Plus, Loader2 } from "lucide-react"
+import { Heart, MessageSquare, Share2, Calendar, MapPin, Clock, Plus, Loader2, Upload, X } from "lucide-react"
 import Image from "next/image"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog"
 import { Input } from "../ui/input"
@@ -71,6 +71,8 @@ export default function Feed({ communityId }: { communityId?: string }) {
 
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(true)
+  const [uploading, setUploading] = useState(false)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
   const fetchPosts = async (pageNum = 1) => {
     if (pageNum === 1) setLoading(true)
@@ -103,6 +105,67 @@ export default function Feed({ communityId }: { communityId?: string }) {
     setPage(1)
     fetchPosts(1)
   }, [activeTab, communityId])
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!session) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to upload images",
+        variant: "destructive",
+      })
+      router.push("/login")
+      return
+    }
+
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Show preview
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setPreviewUrl(reader.result as string)
+    }
+    reader.readAsDataURL(file)
+
+    setUploading(true)
+    const formData = new FormData()
+    formData.append("file", file)
+    formData.append("folder", "eco-site/community")
+
+    try {
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: "Upload failed" }))
+        throw new Error(errorData.message || "Upload failed")
+      }
+
+      const data = await response.json()
+      setImageUrl(data.url)
+      toast({
+        title: "Success",
+        description: "Image uploaded successfully",
+      })
+    } catch (error) {
+      console.error("Upload error:", error)
+      toast({
+        title: "Error",
+        description: "Failed to upload image",
+        variant: "destructive",
+      })
+      setPreviewUrl(null)
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const removeImage = () => {
+    setImageUrl("")
+    setPreviewUrl(null)
+  }
 
   const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -141,6 +204,7 @@ export default function Feed({ communityId }: { communityId?: string }) {
         setTitle("")
         setContent("")
         setImageUrl("")
+        setPreviewUrl(null)
         setType("discussion")
         fetchPosts() // Refresh feed
       } else {
@@ -220,13 +284,39 @@ export default function Feed({ communityId }: { communityId?: string }) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="image">Image URL (Optional)</Label>
-                <Input
-                  id="image"
-                  placeholder="https://example.com/image.jpg"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                />
+                <Label>Image</Label>
+                {previewUrl ? (
+                  <div className="relative h-40 w-full overflow-hidden rounded-lg border">
+                    <Image src={previewUrl} alt="Preview" fill className="object-cover" />
+                    <button
+                      type="button"
+                      onClick={removeImage}
+                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 shadow-md transition-colors"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                    {uploading && (
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                        <Loader2 className="h-8 w-8 animate-spin text-white" />
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50 border-gray-300 transition-colors">
+                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                      <Upload className="h-8 w-8 text-gray-400 mb-2" />
+                      <p className="text-sm text-gray-500">Click to upload an image</p>
+                      <p className="text-xs text-gray-400 mt-1">PNG, JPG or WebP (max 5MB)</p>
+                    </div>
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      disabled={uploading}
+                    />
+                  </label>
+                )}
               </div>
 
               <DialogFooter>

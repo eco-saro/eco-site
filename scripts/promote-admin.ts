@@ -8,15 +8,21 @@ const envPath = path.resolve(process.cwd(), ".env.local");
 if (fs.existsSync(envPath)) {
     const envFile = fs.readFileSync(envPath, "utf8");
     envFile.split("\n").forEach(line => {
-        const [key, value] = line.split("=");
-        if (key && value) {
-            process.env[key.trim()] = value.trim().replace(/['"]/g, "");
+        const index = line.indexOf("=");
+        if (index !== -1) {
+            const key = line.substring(0, index).trim();
+            const value = line.substring(index + 1).trim().replace(/['"]/g, "");
+            if (key) {
+                process.env[key] = value;
+            }
         }
     });
 }
 
 async function promoteToAdmin(email: string) {
     try {
+        console.log("Connecting to database...");
+        console.log("MONGODB_URI:", process.env.MONGODB_URI ? "Defined" : "Not Defined");
         await db();
         const user = await User.findOne({ email });
 

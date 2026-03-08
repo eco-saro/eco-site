@@ -1,12 +1,13 @@
-import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
+import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { getToken } from "next-auth/jwt";
 import { authOptions } from "@/lib/auth";
 import { v2 as cloudinary } from "cloudinary";
 import { connectToDatabase } from "../../../lib/mongoose";
 
 // Cloudinary config moved inside handler
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
     try {
         await connectToDatabase();
 
@@ -16,49 +17,35 @@ export async function POST(req: Request) {
 
         if (!cloudName || !apiKey || !apiSecret) {
             return NextResponse.json(
-                { message: "Server Configuration Error" },
-                { status: 500 }
-            );
-        }
-
-        // Check for common mistake: quotes in env vars
-        if (cloudName.startsWith('"') || cloudName.startsWith("'") ||
-            apiKey.startsWith('"') || apiKey.startsWith("'") ||
-            apiSecret.startsWith('"') || apiSecret.startsWith("'")) {
-            console.error("WARNING: Environment variables appear to contain quotes. Please remove them from .env.local");
-            return NextResponse.json(
-                { message: "Configuration Error: Environment variables contain quotes. Please remove them." },
-                { status: 500 }
-            );
-        }
-
-        // Check for truncated secret
-        if (apiSecret.length < 20) {
-            console.error(`WARNING: Cloudinary API Secret is too short (${apiSecret.length} chars). It should be around 27 characters.`);
-            return NextResponse.json(
-                { message: `Configuration Error: Cloudinary API Secret is too short (${apiSecret.length} chars). Please copy the full secret from your Cloudinary Dashboard.` },
+                { message: "Server Configuration Error: Cloudinary credentials missing." },
                 { status: 500 }
             );
         }
 
         cloudinary.config({
-            cloud_name: cloudName.replaceAll(/['"]/g, ''), // Strip quotes just in case
-            api_key: apiKey.replaceAll(/['"]/g, ''),
-            api_secret: apiSecret.replaceAll(/['"]/g, ''),
+            cloud_name: cloudName.trim().replaceAll(/['"]/g, ''),
+            api_key: apiKey.trim().replaceAll(/['"]/g, ''),
+            api_secret: apiSecret.trim().replaceAll(/['"]/g, ''),
         });
 
         // 1. Authentication Check
+        // Use both getServerSession and getToken for robustness in different environments
         const session = await getServerSession(authOptions);
-        console.log("Upload API Session:", JSON.stringify(session, null, 2));
+        const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
 
-        if (!session) {
-            console.error("Upload: No session found");
-            return NextResponse.json({ message: "Unauthorized: No session" }, { status: 401 });
+        console.log("Upload API Auth Check:", {
+            hasSession: !!session,
+            hasToken: !!token,
+            userId: session?.user?.id || token?.sub
+        });
+
+        if (!session && !token) {
+            console.error("Upload: No session or token found");
+            return NextResponse.json({ message: "Unauthorized: No session found. Please try logging in again." }, { status: 401 });
         }
-        if (!session.user || (session.user as any).role !== "vendor") {
-            console.error("Upload: User is not a vendor", session.user);
-            return NextResponse.json({ message: "Unauthorized: Not a vendor" }, { status: 401 });
-        }
+
+        // Remove the restriction that only vendors can upload
+        // Users just need to be authenticated
 
         // 2. Parse Form Data
         const formData = await req.formData();
@@ -83,15 +70,25 @@ export async function POST(req: Request) {
         const arrayBuffer = await file.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
 
+        const folder = (formData.get("folder") as string) || "eco-site/general";
+
         // 4. Upload to Cloudinary
         const result = await new Promise<any>((resolve, reject) => {
             cloudinary.uploader.upload_stream(
                 {
-                    folder: "eco-site/products", // Optional: organize uploads in a folder
+                    folder: folder, // Dynamic folder support
                 },
                 (error, result) => {
                     if (error) {
-                        reject(error);
+                        let errorMessage = "Unknown upload error";
+                        if (error instanceof Error) {
+                            errorMessage = error.message;
+                        } else if (typeof error === 'object') {
+                            errorMessage = JSON.stringify(error);
+                        } else {
+                            errorMessage = String(error);
+                        }
+                        reject(new Error(errorMessage));
                     } else {
                         resolve(result);
                     }
