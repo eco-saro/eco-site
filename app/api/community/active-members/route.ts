@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from "next/server"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
 import db from "@/lib/mongodb"
 import { Post } from "@/models/post.model"
-
 
 export async function GET(req: NextRequest) {
     try {
         await db()
+
+        const session = await getServerSession(authOptions)
+        const currentUserId = session?.user?.id
+
+        const { searchParams } = new URL(req.url)
+        const limit = Number.parseInt(searchParams.get("limit") || "5")
 
         const activeMembers = await Post.aggregate([
             {
@@ -18,7 +25,7 @@ export async function GET(req: NextRequest) {
                 $sort: { postCount: -1 },
             },
             {
-                $limit: 5,
+                $limit: limit,
             },
             {
                 $lookup: {
@@ -36,13 +43,20 @@ export async function GET(req: NextRequest) {
                     _id: "$user._id",
                     name: "$user.name",
                     avatar: "$user.image",
-                    expertise: "$user.role", // Using role as expertise for now, or add a field to User model
+                    expertise: "$user.role",
                     postCount: 1,
+                    followers: "$user.followers",
                 },
             },
         ])
 
-        return NextResponse.json({ activeMembers })
+        const formattedMembers = activeMembers.map(member => ({
+            ...member,
+            isFollowing: currentUserId ? member.followers?.some((id: any) => id.toString() === currentUserId) : false,
+            followerCount: member.followers?.length || 0
+        }))
+
+        return NextResponse.json({ activeMembers: formattedMembers })
     } catch (error) {
         console.error("Error fetching active members:", error)
         return NextResponse.json(

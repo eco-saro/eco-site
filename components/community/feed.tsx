@@ -8,8 +8,9 @@ import { Card, CardContent } from "../ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
 import { Badge } from "../ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs"
-import { Heart, MessageSquare, Share2, Calendar, MapPin, Clock, Plus, Loader2, Upload, X } from "lucide-react"
+import { Heart, MessageSquare, Share2, Calendar, MapPin, Clock, Plus, Loader2, Image as ImageIcon, X } from "lucide-react"
 import Image from "next/image"
+import { CldUploadWidget, CldImage } from 'next-cloudinary'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog"
 import { Input } from "../ui/input"
 import { Label } from "../ui/label"
@@ -36,6 +37,7 @@ interface Post {
     avatar: string
     isVerified: boolean
     isFollowing: boolean
+    postCount?: number
   }
   type: string
   event?: {
@@ -120,7 +122,7 @@ export default function Feed({ communityId }: { communityId?: string }) {
     const file = e.target.files?.[0]
     if (!file) return
 
-    // Show preview
+    // Show preview immediately
     const reader = new FileReader()
     reader.onloadend = () => {
       setPreviewUrl(reader.result as string)
@@ -153,10 +155,11 @@ export default function Feed({ communityId }: { communityId?: string }) {
       console.error("Upload error:", error)
       toast({
         title: "Error",
-        description: "Failed to upload image",
+        description: error instanceof Error ? error.message : "Failed to upload image",
         variant: "destructive",
       })
       setPreviewUrl(null)
+      setImageUrl("")
     } finally {
       setUploading(false)
     }
@@ -285,18 +288,23 @@ export default function Feed({ communityId }: { communityId?: string }) {
 
               <div className="space-y-2">
                 <Label>Image</Label>
-                {previewUrl ? (
-                  <div className="relative h-40 w-full overflow-hidden rounded-lg border">
-                    <Image src={previewUrl} alt="Preview" fill className="object-cover" />
+                {previewUrl || imageUrl ? (
+                  <div className="relative h-48 w-full overflow-hidden rounded-lg border">
+                    <CldImage
+                      src={imageUrl || previewUrl || ""}
+                      alt="Post image"
+                      fill
+                      className="object-cover"
+                    />
                     <button
                       type="button"
                       onClick={removeImage}
-                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 shadow-md transition-colors"
+                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 shadow-md transition-colors z-10"
                     >
                       <X className="h-4 w-4" />
                     </button>
                     {uploading && (
-                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-20">
                         <Loader2 className="h-8 w-8 animate-spin text-white" />
                       </div>
                     )}
@@ -304,8 +312,8 @@ export default function Feed({ communityId }: { communityId?: string }) {
                 ) : (
                   <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50 border-gray-300 transition-colors">
                     <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                      <Upload className="h-8 w-8 text-gray-400 mb-2" />
-                      <p className="text-sm text-gray-500">Click to upload an image</p>
+                      <ImageIcon className="h-8 w-8 text-gray-400 mb-2" />
+                      <p className="text-sm text-gray-500 font-medium">Click to select device images</p>
                       <p className="text-xs text-gray-400 mt-1">PNG, JPG or WebP (max 5MB)</p>
                     </div>
                     <input
@@ -491,7 +499,14 @@ function PostCard({ post, onLikeUpdate }: { post: Post, onLikeUpdate: (id: strin
           <div className="flex-1 space-y-1">
             <div className="flex items-center justify-between">
               <div>
-                <span className="font-medium">{post.author.name}</span>
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">{post.author.name}</span>
+                  {post.author.postCount !== undefined && (
+                    <span className="text-[10px] bg-gray-100 px-1.5 py-0.5 rounded-full text-gray-500 font-normal">
+                      {post.author.postCount} {post.author.postCount === 1 ? 'post' : 'posts'}
+                    </span>
+                  )}
+                </div>
                 {post.author.isVerified && (
                   <span className="ml-1 inline-flex items-center">
                     <svg
@@ -552,8 +567,14 @@ function PostCard({ post, onLikeUpdate }: { post: Post, onLikeUpdate: (id: strin
                 <p className="text-gray-600 whitespace-pre-wrap">{post.content}</p>
 
                 {post.image && (
-                  <div className="relative h-64 w-full overflow-hidden rounded-lg mt-2">
-                    <Image src={post.image} alt={post.title} fill className="object-cover" />
+                  <div className="relative h-72 w-full overflow-hidden rounded-lg mt-3 border bg-gray-50">
+                    <CldImage
+                      src={post.image}
+                      alt={post.title}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 100vw, 800px"
+                    />
                   </div>
                 )}
               </div>
@@ -611,7 +632,30 @@ function PostCard({ post, onLikeUpdate }: { post: Post, onLikeUpdate: (id: strin
                       </form>
                     </DialogContent>
                   </Dialog>
-                  <Button variant="ghost" size="sm">
+                  <Button variant="ghost" size="sm" onClick={(e) => {
+                    e.stopPropagation()
+                    const baseUrl = process.env.NODE_ENV === 'production' ? 'https://ecosaro.com' : window.location.origin
+                    const shareUrl = `${baseUrl}/community/post/${post._id}`
+
+                    if (navigator.share) {
+                      navigator.share({
+                        title: post.title,
+                        text: `Check out this post on EcoSaro: ${post.title}`,
+                        url: shareUrl,
+                      }).catch((err) => {
+                        console.error("Error sharing:", err)
+                      })
+                    } else {
+                      navigator.clipboard.writeText(shareUrl).then(() => {
+                        toast({
+                          title: "Link copied",
+                          description: "Post link copied to clipboard",
+                        })
+                      }).catch((err) => {
+                        console.error("Error copying to clipboard:", err)
+                      })
+                    }
+                  }}>
                     <Share2 className="h-4 w-4" />
                   </Button>
                 </div>

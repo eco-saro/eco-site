@@ -1,8 +1,14 @@
+"use client"
+
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Users, MessageSquare, Award, Calendar } from "lucide-react"
+import Link from "next/link"
+import { useSession } from "next-auth/react"
 
 export default function JoinCommunity() {
+  const { data: session } = useSession()
+
   return (
     <Card className="bg-green-50 border-green-100">
       <CardHeader className="pb-3">
@@ -44,7 +50,11 @@ export default function JoinCommunity() {
         </div>
       </CardContent>
       <CardFooter>
-        <Button className="w-full">Create an Account</Button>
+        <Button className="w-full" asChild>
+          <Link href={session ? "/community" : "/register"}>
+            {session ? "Start Posting" : "Create an Account"}
+          </Link>
+        </Button>
       </CardFooter>
     </Card>
   )

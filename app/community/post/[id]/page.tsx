@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { toast } from "@/components/ui/use-toast"
 import { Loader2, Heart, MessageSquare, Share2, ArrowLeft, MoreHorizontal, Reply } from "lucide-react"
 import Image from "next/image"
+import { CldImage } from 'next-cloudinary'
 import { formatDistanceToNow } from "date-fns"
 import Link from "next/link"
 import {
@@ -363,8 +364,15 @@ export default function PostPage() {
                             </div>
 
                             {post.image && (
-                                <div className="relative h-96 w-full overflow-hidden rounded-lg">
-                                    <Image src={post.image} alt={post.title} fill className="object-contain bg-gray-100" />
+                                <div className="relative h-96 w-full overflow-hidden rounded-lg mt-4 border bg-gray-50">
+                                    <CldImage
+                                        src={post.image}
+                                        alt={post.title}
+                                        fill
+                                        className="object-contain"
+                                        sizes="(max-width: 1200px) 100vw, 1200px"
+                                        priority
+                                    />
                                 </div>
                             )}
 
@@ -373,7 +381,28 @@ export default function PostPage() {
                                     <MessageSquare className="h-5 w-5" />
                                     <span>{post.comments.length} Comments</span>
                                 </div>
-                                <Button variant="ghost" size="sm">
+                                <Button variant="ghost" size="sm" onClick={() => {
+                                    const baseUrl = process.env.NODE_ENV === 'production' ? 'https://ecosaro.com' : window.location.origin
+                                    const shareUrl = `${baseUrl}/community/post/${params.id}`
+                                    if (navigator.share) {
+                                        navigator.share({
+                                            title: post.title,
+                                            text: `Check out this post on EcoSaro: ${post.title}`,
+                                            url: shareUrl,
+                                        }).catch((err) => {
+                                            console.error("Error sharing:", err)
+                                        })
+                                    } else {
+                                        navigator.clipboard.writeText(shareUrl).then(() => {
+                                            toast({
+                                                title: "Link copied",
+                                                description: "Post link copied to clipboard",
+                                            })
+                                        }).catch((err) => {
+                                            console.error("Error copying to clipboard:", err)
+                                        })
+                                    }
+                                }}>
                                     <Share2 className="h-4 w-4 mr-2" /> Share
                                 </Button>
                             </div>

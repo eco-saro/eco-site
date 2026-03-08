@@ -35,12 +35,12 @@ const nextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self';",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://checkout.razorpay.com https://www.googletagmanager.com;",
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://checkout.razorpay.com https://www.googletagmanager.com https://upload-widget.cloudinary.com https://widget.cloudinary.com;",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;",
               "img-src 'self' data: https://res.cloudinary.com https://*.razorpay.com https://lh3.googleusercontent.com https://images.unsplash.com;",
               "font-src 'self' https://fonts.gstatic.com;",
-              "frame-src 'self' https://api.razorpay.com https://checkout.razorpay.com;",
-              "connect-src 'self' https://api.razorpay.com https://lumberjack.razorpay.com;"
+              "frame-src 'self' https://api.razorpay.com https://checkout.razorpay.com https://upload-widget.cloudinary.com https://widget.cloudinary.com;",
+              "connect-src 'self' https://api.razorpay.com https://lumberjack.razorpay.com https://*.cloudinary.com;"
             ].join(' ')
           }
         ],

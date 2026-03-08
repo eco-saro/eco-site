@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { User } from "@/models/user"
 import { Order } from "@/models/order.model"
+import { Post } from "@/models/post.model"
 import dbConnect from "@/lib/dbconnect"
 
 export async function GET(req: Request) {
@@ -24,6 +25,7 @@ export async function GET(req: Request) {
 
         // Fetch stats for overview
         const orderCount = await Order.countDocuments({ user: userId })
+        const postCount = await Post.countDocuments({ author: userId })
 
         // Placeholder for bookings and loyalty points as they don't exist in models yet
         const bookingCount = 0
@@ -35,7 +37,10 @@ export async function GET(req: Request) {
             stats: {
                 totalOrders: orderCount,
                 upcomingBookings: bookingCount,
-                loyaltyPoints: loyaltyPoints
+                loyaltyPoints: loyaltyPoints,
+                communityPosts: postCount,
+                followersCount: user.followers?.length || 0,
+                followingCount: user.following?.length || 0
             }
         })
     } catch (error) {

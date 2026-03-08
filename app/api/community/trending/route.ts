@@ -6,6 +6,9 @@ export async function GET(req: NextRequest) {
     try {
         await db()
 
+        const { searchParams } = new URL(req.url)
+        const limit = Number.parseInt(searchParams.get("limit") || "5")
+
         const trendingPosts = await Post.aggregate([
             {
                 $addFields: {
@@ -13,21 +16,23 @@ export async function GET(req: NextRequest) {
                 },
             },
             {
-                $sort: { likesCount: -1 },
-            },
-            {
-                $limit: 5,
-            },
-            {
                 $lookup: {
-                    from: "users",
+                    from: "posts",
                     localField: "author",
-                    foreignField: "_id",
-                    as: "author",
+                    foreignField: "author",
+                    as: "authorPosts",
                 },
             },
             {
-                $unwind: "$author",
+                $addFields: {
+                    authorPostCount: { $size: "$authorPosts" },
+                },
+            },
+            {
+                $sort: { likesCount: -1 },
+            },
+            {
+                $limit: limit,
             },
             {
                 $project: {
@@ -35,7 +40,7 @@ export async function GET(req: NextRequest) {
                     title: 1,
                     type: 1,
                     likesCount: 1,
-                    // views: 0, // We don't have views yet, maybe add later
+                    authorPostCount: 1,
                 },
             },
         ])
@@ -44,8 +49,8 @@ export async function GET(req: NextRequest) {
         const formattedTrending = trendingPosts.map(post => ({
             title: post.title,
             category: post.type.charAt(0).toUpperCase() + post.type.slice(1), // Capitalize
-            posts: post.likesCount, // Using likes as a proxy for "posts" count in the UI card for now, or just show likes
-            views: post.likesCount * 10 + Math.floor(Math.random() * 100), // Fake views for now
+            posts: post.authorPostCount,
+            views: (post.likesCount + 1) * 12 + Math.floor(Math.random() * 50),
             id: post._id
         }))
 

@@ -52,28 +52,33 @@ export async function GET(req: NextRequest) {
         const total = await Post.countDocuments(query)
 
         // Format posts for frontend
-        const formattedPosts = posts.map((post: any) => ({
-            _id: post._id,
-            title: post.title,
-            content: post.content,
-            image: post.image,
-            author: {
-                id: post.author?._id,
-                name: post.author?.name || "Unknown User",
-                avatar: post.author?.image || "",
-                isVerified: false, // You might want to add this to User model later
-                isFollowing: false, // Logic for following would go here
-            },
-            community: post.community ? {
-                name: post.community.name,
-                slug: post.community.slug,
-                icon: post.community.icon
-            } : null,
-            type: post.type,
-            likes: post.likes?.length || 0,
-            isLiked: userId ? post.likes?.some((id: any) => id.toString() === userId) : false,
-            comments: post.comments?.length || 0,
-            createdAt: post.createdAt,
+        const formattedPosts = await Promise.all(posts.map(async (post: any) => {
+            const authorPostCount = post.author ? await Post.countDocuments({ author: post.author._id }) : 0;
+
+            return {
+                _id: post._id,
+                title: post.title,
+                content: post.content,
+                image: post.image,
+                author: {
+                    id: post.author?._id,
+                    name: post.author?.name || "Unknown User",
+                    avatar: post.author?.image || "",
+                    isVerified: false,
+                    isFollowing: false,
+                    postCount: authorPostCount
+                },
+                community: post.community ? {
+                    name: post.community.name,
+                    slug: post.community.slug,
+                    icon: post.community.icon
+                } : null,
+                type: post.type,
+                likes: post.likes?.length || 0,
+                isLiked: userId ? post.likes?.some((id: any) => id.toString() === userId) : false,
+                comments: post.comments?.length || 0,
+                createdAt: post.createdAt,
+            }
         }))
 
         return NextResponse.json({

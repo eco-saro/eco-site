@@ -72,6 +72,13 @@ function LoginContent() {
                             </svg>
                             Continue with Google
                         </Button>
+
+                        <div className="text-center text-sm">
+                            <span className="text-gray-500">Don&apos;t have an account? </span>
+                            <Link href="/register" className="text-emerald-600 hover:underline font-medium">
+                                Create an account
+                            </Link>
+                        </div>
                     </CardContent>
                 </Card>
 

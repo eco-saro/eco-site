@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
-import { Calendar, Package, Settings as SettingsIcon, LogOut, User, MapPin, CreditCard, HelpCircle, Star, ChevronRight, Check } from 'lucide-react';
+import { Calendar, Package, Settings as SettingsIcon, LogOut, User, MapPin, CreditCard, HelpCircle, Star, ChevronRight, Check, Users, UserPlus, MessageSquare } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/components/ui/use-toast';
 import { Progress } from '@/components/ui/progress';
@@ -88,7 +88,10 @@ export default function ProfilePage() {
 
   const [stats, setStats] = useState({
     totalOrders: 0,
-    loyaltyPoints: 0
+    loyaltyPoints: 0,
+    communityPosts: 0,
+    followersCount: 0,
+    followingCount: 0
   })
 
   // Initialize form data
@@ -291,6 +294,16 @@ export default function ProfilePage() {
                 )}
               </div>
               <h2 className="text-lg font-semibold">{name}</h2>
+              <div className="flex gap-4 mt-2 mb-4">
+                <div className="text-center">
+                  <p className="text-xs text-gray-400">Followers</p>
+                  <p className="text-sm font-bold text-emerald-600">{stats.followersCount}</p>
+                </div>
+                <div className="text-center border-l border-gray-100 pl-4">
+                  <p className="text-xs text-gray-400">Following</p>
+                  <p className="text-sm font-bold text-emerald-600">{stats.followingCount}</p>
+                </div>
+              </div>
             </div>
 
             <nav className="space-y-2">
@@ -359,11 +372,47 @@ export default function ProfilePage() {
                   <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
                     <div className="flex items-center">
                       <div className="bg-green-50 p-3 rounded-lg">
+                        <MessageSquare className="text-green-600 w-6 h-6" />
+                      </div>
+                      <div className="ml-4">
+                        <p className="text-sm text-gray-500">Community Posts</p>
+                        <p className="text-xl font-bold mt-1">{stats.communityPosts || 0}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
+                    <div className="flex items-center">
+                      <div className="bg-green-50 p-3 rounded-lg">
+                        <Users className="text-green-600 w-6 h-6" />
+                      </div>
+                      <div className="ml-4">
+                        <p className="text-sm text-gray-500">Followers</p>
+                        <p className="text-xl font-bold mt-1">{stats.followersCount || 0}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
+                    <div className="flex items-center">
+                      <div className="bg-green-50 p-3 rounded-lg">
+                        <UserPlus className="text-green-600 w-6 h-6" />
+                      </div>
+                      <div className="ml-4">
+                        <p className="text-sm text-gray-500">Following</p>
+                        <p className="text-xl font-bold mt-1">{stats.followingCount || 0}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
+                    <div className="flex items-center">
+                      <div className="bg-green-50 p-3 rounded-lg">
                         <Star className="text-green-600 w-6 h-6" />
                       </div>
                       <div className="ml-4">
                         <p className="text-sm text-gray-500">Loyalty Points</p>
-                        <p className="text-xl font-bold mt-1">{stats.loyaltyPoints}</p>
+                        <p className="text-xl font-bold mt-1">{stats.loyaltyPoints || 0}</p>
                       </div>
                     </div>
                   </div>

@@ -69,6 +69,13 @@ function RegisterContent() {
                             </svg>
                             Continue with Google
                         </Button>
+
+                        <div className="text-center text-sm">
+                            <span className="text-gray-500">Already have an account? </span>
+                            <Link href="/login" className="text-emerald-600 hover:underline font-medium">
+                                Sign in
+                            </Link>
+                        </div>
                     </CardContent>
                 </Card>
 

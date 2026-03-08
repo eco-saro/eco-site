@@ -33,6 +33,8 @@ export interface IUser extends Document {
   isEmailVerified: boolean
   addresses: IAddress[]
   wishlist: Types.ObjectId[]         // Product references
+  followers: Types.ObjectId[]        // User references
+  following: Types.ObjectId[]        // User references
   dateOfBirth?: Date
   gender?: "male" | "female" | "other"
   bio?: string
@@ -102,6 +104,18 @@ const UserSchema: Schema<IUser> = new Schema(
       {
         type: Schema.Types.ObjectId,
         ref: "Product",
+      },
+    ],
+    followers: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+    following: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "User",
       },
     ],
     dateOfBirth: Date,

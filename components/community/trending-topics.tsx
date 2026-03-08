@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Loader2 } from "lucide-react"
+import Link from "next/link"
 
 interface TrendingTopic {
   title: string
@@ -48,18 +49,20 @@ export default function TrendingTopics() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold tracking-tight">Trending Topics</h2>
-        <Button variant="ghost" size="sm">
-          View All
-        </Button>
+        <Link href="/community/trending">
+          <Button variant="ghost" size="sm">
+            View All
+          </Button>
+        </Link>
       </div>
 
       <Tabs defaultValue="all" className="w-full">
         <TabsList className="w-full justify-start mb-4 overflow-x-auto">
           <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="gardening">Gardening</TabsTrigger>
-          <TabsTrigger value="sustainable-living">Sustainable Living</TabsTrigger>
-          <TabsTrigger value="zero-waste">Zero Waste</TabsTrigger>
-          <TabsTrigger value="eco-tips">Eco Tips</TabsTrigger>
+          <TabsTrigger value="Discussion">Discussions</TabsTrigger>
+          <TabsTrigger value="Tip">Tips</TabsTrigger>
+          <TabsTrigger value="Question">Questions</TabsTrigger>
+          <TabsTrigger value="Event">Events</TabsTrigger>
         </TabsList>
 
         <TabsContent value="all" className="space-y-4">
@@ -70,40 +73,40 @@ export default function TrendingTopics() {
           </div>
         </TabsContent>
 
-        <TabsContent value="gardening" className="space-y-4">
+        <TabsContent value="Discussion" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {trendingTopics
-              .filter((topic) => topic.category === "Gardening")
+              .filter((topic) => topic.category === "Discussion")
               .map((topic) => (
                 <TopicCard key={topic.id} {...topic} />
               ))}
           </div>
         </TabsContent>
 
-        <TabsContent value="sustainable-living" className="space-y-4">
+        <TabsContent value="Tip" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {trendingTopics
-              .filter((topic) => topic.category === "Sustainable Living")
+              .filter((topic) => topic.category === "Tip")
               .map((topic) => (
                 <TopicCard key={topic.id} {...topic} />
               ))}
           </div>
         </TabsContent>
 
-        <TabsContent value="zero-waste" className="space-y-4">
+        <TabsContent value="Question" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {trendingTopics
-              .filter((topic) => topic.category === "Zero Waste")
+              .filter((topic) => topic.category === "Question")
               .map((topic) => (
                 <TopicCard key={topic.id} {...topic} />
               ))}
           </div>
         </TabsContent>
 
-        <TabsContent value="eco-tips" className="space-y-4">
+        <TabsContent value="Event" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {trendingTopics
-              .filter((topic) => topic.category === "Eco Tips")
+              .filter((topic) => topic.category === "Event")
               .map((topic) => (
                 <TopicCard key={topic.id} {...topic} />
               ))}

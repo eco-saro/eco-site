@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Loader2 } from "lucide-react"
+import Link from "next/link"
 
 interface ActiveMember {
   _id: string
@@ -78,9 +79,11 @@ export default function ActiveMembers() {
             No active members yet.
           </div>
         )}
-        <Button variant="outline" className="w-full">
-          View All Members
-        </Button>
+        <Link href="/community/members">
+          <Button variant="outline" className="w-full">
+            View All Members
+          </Button>
+        </Link>
       </CardContent>
     </Card>
   )
